@@ -33,18 +33,42 @@ class EmotionDetectionApp {
             await faceapi.tf.ready();
             console.log('TensorFlow backend ready!');
             
-            await Promise.all([
+            console.log('Loading models from:', CONFIG.MODEL_URL);
+            
+            // Load models with timeout protection
+            const loadPromise = Promise.all([
                 faceapi.nets.tinyFaceDetector.loadFromUri(CONFIG.MODEL_URL),
                 faceapi.nets.faceExpressionNet.loadFromUri(CONFIG.MODEL_URL)
             ]);
             
+            // 30 second timeout
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Model loading timeout')), 30000)
+            );
+            
+            await Promise.race([loadPromise, timeoutPromise]);
+            
+            console.log('Models loaded successfully!');
             this.modelsLoaded = true;
             this.updateStatus('Sẵn sàng! Nhấn "Bắt Đầu" để bắt đầu.', false);
             document.getElementById('startBtn').disabled = false;
             
         } catch (error) {
             console.error('Error loading models:', error);
-            this.updateStatus('Lỗi tải mô hình AI. Vui lòng tải lại trang!', false);
+            console.error('Model URL:', CONFIG.MODEL_URL);
+            console.error('Error details:', error.message, error.stack);
+            
+            // Provide helpful error message
+            let errorMsg = 'Lỗi tải mô hình AI. ';
+            if (error.message.includes('timeout')) {
+                errorMsg += 'Kết nối mạng chậm. Vui lòng kiểm tra internet và tải lại!';
+            } else if (error.message.includes('fetch') || error.message.includes('network')) {
+                errorMsg += 'Không thể tải models từ CDN. Kiểm tra kết nối mạng!';
+            } else {
+                errorMsg += 'Vui lòng tải lại trang hoặc thử trình duyệt khác!';
+            }
+            
+            this.updateStatus(errorMsg, false);
         }
     }
 
