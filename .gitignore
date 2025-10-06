@@ -2,6 +2,10 @@
 node_modules/
 package-lock.json
 
+# Vercel
+.vercel
+.vercel/
+
 # Build outputs
 dist/
 build/
@@ -40,5 +44,5 @@ coverage/
 *.temp
 .cache/
 
-# Not needed for production (using CDN)
-# models/*.shard*
+# Not needed (using CDN)
+# models/

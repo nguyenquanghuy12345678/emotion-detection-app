@@ -1,14 +1,6 @@
 const CONFIG = {
-    // Model paths - Auto detect environment
-    MODEL_URL: (() => {
-        // Check if running on localhost or production
-        const isLocalhost = window.location.hostname === 'localhost' || 
-                           window.location.hostname === '127.0.0.1' ||
-                           window.location.protocol === 'file:';
-        
-        // Use local models for localhost, CDN for production (faster initial load)
-        return isLocalhost ? './models/' : 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
-    })(),
+    // Model paths - Always use CDN (works everywhere, no CORS issues)
+    MODEL_URL: 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/',
     
     // Detection settings
     DETECTION_INTERVAL: 100, // ms

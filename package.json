@@ -1,0 +1,25 @@
+{
+  "name": "emotionai",
+  "version": "1.0.0",
+  "description": "AI Emotion Detection using Face-API.js",
+  "main": "index.html",
+  "scripts": {
+    "dev": "npx http-server -p 8080",
+    "start": "npx http-server -p 8080",
+    "vercel-build": "echo 'No build needed - static site'"
+  },
+  "keywords": [
+    "emotion",
+    "detection",
+    "face-api",
+    "tensorflow",
+    "ai",
+    "webcam"
+  ],
+  "author": "nguyenquanghuy12345678",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nguyenquanghuy12345678/emotionai.git"
+  }
+}
