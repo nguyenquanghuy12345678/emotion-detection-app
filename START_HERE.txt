@@ -1,0 +1,70 @@
+========================================
+   AI EMOTION DETECTION APP
+   KHẮC PHỤC SỰ CỐ & HƯỚNG DẪN CHẠY
+========================================
+
+🎯 CHẠY NGAY (3 GIÂY):
+   1. Double-click: OPEN_APP.bat
+   2. Cho phép quyền camera
+   3. Nhấn "Bắt Đầu"
+
+🎯 CHẠY VỚI SERVER (Tốt hơn):
+   1. Double-click: START_SERVER.bat
+   2. Mở: http://localhost:8080
+   3. Cho phép camera & bắt đầu
+
+🔍 KIỂM TRA LỖI:
+   1. Mở: diagnostic.html
+   2. Nhấn "Chạy Kiểm Tra Đầy Đủ"
+   3. Xem kết quả
+
+📖 XEM HƯỚNG DẪN CHI TIẾT:
+   - TROUBLESHOOTING.md  (Khắc phục lỗi)
+   - MODELS_SETUP.md     (Cấu hình models)
+   - README.md           (Hướng dẫn đầy đủ)
+
+========================================
+
+✅ YÊU CẦU:
+   - Trình duyệt: Chrome/Edge/Firefox (mới)
+   - Webcam (camera)
+   - Internet (để load models từ CDN)
+
+❗ LƯU Ý:
+   - Models đang dùng CDN (không cần tải về)
+   - Nếu báo lỗi CORS → dùng START_SERVER.bat
+   - Nếu camera không hoạt động → kiểm tra quyền
+
+========================================
+
+💡 LỖI THƯỜNG GẶP:
+
+1. "Models không load"
+   → Kiểm tra internet
+   → Xem: MODELS_SETUP.md
+
+2. "Camera không hoạt động"
+   → Cho phép quyền camera trong browser
+   → Settings > Privacy > Camera
+
+3. "CORS error"
+   → PHẢI dùng START_SERVER.bat
+   → KHÔNG mở file HTML trực tiếp
+
+4. "Màn hình đen"
+   → Mở Console (F12) xem lỗi
+   → Chạy diagnostic.html
+
+========================================
+
+🎓 CẤU TRÚC:
+   index.html         - Trang chính
+   diagnostic.html    - Kiểm tra hệ thống
+   OPEN_APP.bat      - Mở nhanh
+   START_SERVER.bat  - Chạy server
+   js/config.js      - Cấu hình
+   models/           - Thư mục models
+
+========================================
+
+Made with ❤️ using Face-API.js

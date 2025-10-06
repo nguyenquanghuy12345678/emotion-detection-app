@@ -1,0 +1,331 @@
+/* ============================================
+   GLOBAL STYLES
+============================================ */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    transition: background 0.6s ease;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    overflow-x: hidden;
+}
+
+/* ============================================
+   EMOTION-BASED BACKGROUNDS
+============================================ */
+body.happy {
+    background: linear-gradient(135deg, #FFF59D 0%, #FFE082 50%, #FFEB3B 100%);
+}
+
+body.sad {
+    background: linear-gradient(135deg, #37474F 0%, #546E7A 50%, #607D8B 100%);
+}
+
+body.angry {
+    background: linear-gradient(135deg, #EF5350 0%, #E53935 50%, #C62828 100%);
+    animation: shake 0.5s infinite;
+}
+
+body.surprised {
+    background: linear-gradient(135deg, #FF6B6B 0%, #4ECDC4 50%, #FFE66D 100%);
+    animation: surpriseFlash 0.5s infinite;
+}
+
+body.neutral {
+    background: linear-gradient(135deg, #90CAF9 0%, #64B5F6 50%, #42A5F5 100%);
+}
+
+body.fearful {
+    background: linear-gradient(135deg, #9C27B0 0%, #673AB7 50%, #512DA8 100%);
+}
+
+body.disgusted {
+    background: linear-gradient(135deg, #8BC34A 0%, #689F38 50%, #558B2F 100%);
+}
+
+/* ============================================
+   ANIMATIONS
+============================================ */
+@keyframes surpriseFlash {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.85; }
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+@keyframes bounce {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+}
+
+@keyframes float {
+    0% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(-100vh) rotate(360deg);
+        opacity: 0;
+    }
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================
+   CONTAINER & LAYOUT
+============================================ */
+.container {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    max-width: 900px;
+    width: 95%;
+    backdrop-filter: blur(10px);
+    animation: fadeIn 0.5s ease;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+h1 {
+    color: #333;
+    margin-bottom: 10px;
+    font-size: 2.2em;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+}
+
+.subtitle {
+    color: #666;
+    font-size: 1em;
+}
+
+/* ============================================
+   VIDEO & CANVAS
+============================================ */
+.video-container {
+    position: relative;
+    width: 100%;
+    max-width: 640px;
+    margin: 0 auto 20px;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    background: #000;
+}
+
+video {
+    width: 100%;
+    height: auto;
+    display: block;
+    transform: scaleX(-1);
+}
+
+canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform: scaleX(-1);
+}
+
+/* ============================================
+   CONTROL BUTTONS
+============================================ */
+.controls {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+}
+
+button {
+    padding: 12px 30px;
+    font-size: 16px;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 600;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#startBtn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+#startBtn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+#stopBtn {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+}
+
+#stopBtn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(245, 87, 108, 0.4);
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ============================================
+   STATUS & EMOTION DISPLAY
+============================================ */
+.status {
+    text-align: center;
+    padding: 15px;
+    background: #f0f4ff;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    font-weight: 600;
+    color: #333;
+}
+
+.loader {
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid #667eea;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite;
+    margin: 15px auto 0;
+}
+
+.emotion-display {
+    text-align: center;
+    padding: 25px;
+    background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+    border-radius: 15px;
+    margin-bottom: 20px;
+    min-height: 150px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.3s ease;
+}
+
+.emotion-emoji {
+    font-size: 4em;
+    margin-bottom: 10px;
+    animation: bounce 0.5s ease;
+}
+
+.emotion-text {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.emotion-message {
+    font-size: 1.1em;
+    color: #555;
+    font-style: italic;
+    margin-top: 10px;
+    max-width: 500px;
+}
+
+/* ============================================
+   STATISTICS
+============================================ */
+.stats {
+    display: flex;
+    justify-content: space-around;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    gap: 20px;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.stat-label {
+    font-size: 0.9em;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+.stat-value {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #667eea;
+}
+
+/* ============================================
+   FLOATING EMOJIS
+============================================ */
+.floating-emoji {
+    position: fixed;
+    font-size: 3em;
+    animation: float 3s ease-in-out;
+    pointer-events: none;
+    z-index: 1000;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+============================================ */
+@media (max-width: 768px) {
+    h1 {
+        font-size: 1.8em;
+    }
+
+    .controls {
+        flex-direction: column;
+    }
+
+    button {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .emotion-emoji {
+        font-size: 3em;
+    }
+
+    .emotion-text {
+        font-size: 1.2em;
+    }
+
+    .stats {
+        flex-direction: column;
+        gap: 10px;
+    }
+}
