@@ -3,20 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Nhận Diện Cảm Xúc</title>
+    <title>AI Trợ Lý Công Việc - Emotion Detection</title>
     
     <!-- Face-api.js Library - Use jsdelivr CDN for better reliability -->
     <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.min.js"></script>
     
     <!-- CSS -->
     <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/productivity.css">
 </head>
 <body>
+    <!-- Navigation Tabs -->
+    <div class="tab-navigation">
+        <button class="tab-btn active" data-tab="emotion">🎭 Nhận Diện Cảm Xúc</button>
+        <button class="tab-btn" data-tab="productivity">💼 Hỗ Trợ Công Việc</button>
+        <button class="tab-btn" data-tab="analytics">📊 Thống Kê</button>
+    </div>
+
     <!-- Main Container -->
     <div class="container">
         <header>
-            <h1>🎭 AI Nhận Diện Cảm Xúc</h1>
-            <p class="subtitle">Sử dụng AI để phát hiện cảm xúc của bạn qua webcam</p>
+            <h1 id="mainTitle">🎭 AI Trợ Lý Công Việc</h1>
+            <p class="subtitle">Nhận diện cảm xúc & hỗ trợ năng suất làm việc với AI</p>
         </header>
 
         <!-- Loading Status -->
@@ -61,6 +69,98 @@
                 <span id="confidence" class="stat-value">0%</span>
             </div>
         </div>
+
+        <!-- ============================================
+             PRODUCTIVITY TAB - HỖ TRỢ CÔNG VIỆC
+        ============================================ -->
+        <div id="productivityTab" class="tab-content" style="display: none;">
+            <!-- Trạng thái làm việc -->
+            <div id="workState" class="section-card">
+                <h2>📊 Trạng Thái Làm Việc</h2>
+                <p class="hint">Đang phân tích trạng thái của bạn...</p>
+            </div>
+
+            <!-- Pomodoro Timer -->
+            <div class="section-card">
+                <h2>🍅 Pomodoro Timer</h2>
+                <div id="pomodoroTimer">
+                    <p class="hint">Timer sẽ xuất hiện khi bạn bắt đầu nhận diện</p>
+                </div>
+            </div>
+
+            <!-- Ghi chú công việc -->
+            <div class="section-card">
+                <h2>📝 Ghi Chú Công Việc</h2>
+                <div class="note-input-group">
+                    <input type="text" id="noteInput" placeholder="Thêm ghi chú về công việc..." />
+                    <button onclick="addNote()" class="btn-primary">➕ Thêm</button>
+                </div>
+                <div id="workNotes" class="work-notes-container">
+                    <p class="no-notes">Chưa có ghi chú nào. Thêm ghi chú đầu tiên!</p>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="section-card">
+                <h2>⚡ Hành Động Nhanh</h2>
+                <div class="quick-actions">
+                    <button onclick="productivityTracker.exportData()" class="action-btn">
+                        💾 Xuất báo cáo
+                    </button>
+                    <button onclick="productivityTracker.resetData()" class="action-btn danger">
+                        🗑️ Xóa dữ liệu
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================
+             ANALYTICS TAB - THỐNG KÊ
+        ============================================ -->
+        <div id="analyticsTab" class="tab-content" style="display: none;">
+            <!-- Thống kê tổng quan -->
+            <div class="section-card">
+                <h2>📈 Thống Kê Năng Suất</h2>
+                <div id="productivityStats">
+                    <p class="hint">Thống kê sẽ xuất hiện khi bạn bắt đầu làm việc</p>
+                </div>
+            </div>
+
+            <!-- Biểu đồ cảm xúc -->
+            <div class="section-card">
+                <h2>🎭 Phân Bố Cảm Xúc</h2>
+                <div id="emotionChart" class="emotion-chart">
+                    <p class="hint">Biểu đồ sẽ xuất hiện sau khi thu thập dữ liệu</p>
+                </div>
+            </div>
+
+            <!-- Lịch sử cảm xúc -->
+            <div class="section-card">
+                <h2>📊 Lịch Sử Cảm Xúc</h2>
+                <div id="emotionTimeline" class="emotion-timeline">
+                    <p class="hint">Timeline sẽ hiển thị lịch sử cảm xúc của bạn</p>
+                </div>
+            </div>
+
+            <!-- Tips & Recommendations -->
+            <div class="section-card">
+                <h2>💡 Gợi Ý Cải Thiện</h2>
+                <div id="recommendations" class="recommendations">
+                    <div class="tip-card">
+                        <div class="tip-icon">🎯</div>
+                        <div class="tip-text">Hãy duy trì trạng thái tập trung bằng kỹ thuật Pomodoro</div>
+                    </div>
+                    <div class="tip-card">
+                        <div class="tip-icon">☕</div>
+                        <div class="tip-text">Nghỉ ngơi 5-10 phút sau mỗi 25 phút làm việc</div>
+                    </div>
+                    <div class="tip-card">
+                        <div class="tip-icon">😌</div>
+                        <div class="tip-text">Thực hiện bài tập thở sâu khi cảm thấy căng thẳng</div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Hidden Audio Elements -->
@@ -72,6 +172,146 @@
     <script src="js/config.js"></script>
     <script src="js/emotions.js"></script>
     <script src="js/camera.js"></script>
+    <script src="js/productivity.js"></script>
     <script src="js/app.js"></script>
+    
+    <!-- Tab Switching Script -->
+    <script>
+        // Tab Navigation
+        document.addEventListener('DOMContentLoaded', () => {
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const tabName = btn.getAttribute('data-tab');
+                    switchTab(tabName);
+                });
+            });
+        });
+        
+        function switchTab(tabName) {
+            // Remove active class from all buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Add active class to clicked button
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+            
+            // Hide all tab contents
+            const emotionContent = document.querySelector('.video-container').parentElement;
+            document.getElementById('productivityTab').style.display = 'none';
+            document.getElementById('analyticsTab').style.display = 'none';
+            
+            // Show emotion detection elements
+            const emotionElements = [
+                '.video-container', '.controls', '#emotionDisplay', '#stats'
+            ];
+            
+            // Show selected tab
+            if (tabName === 'emotion') {
+                emotionElements.forEach(selector => {
+                    const el = document.querySelector(selector);
+                    if (el) el.style.display = '';
+                });
+            } else if (tabName === 'productivity') {
+                emotionElements.forEach(selector => {
+                    const el = document.querySelector(selector);
+                    if (el) el.style.display = 'none';
+                });
+                document.getElementById('productivityTab').style.display = 'block';
+            } else if (tabName === 'analytics') {
+                emotionElements.forEach(selector => {
+                    const el = document.querySelector(selector);
+                    if (el) el.style.display = 'none';
+                });
+                document.getElementById('analyticsTab').style.display = 'block';
+                updateAnalytics();
+            }
+        }
+        
+        function addNote() {
+            const input = document.getElementById('noteInput');
+            const note = input.value.trim();
+            
+            if (note && productivityTracker) {
+                productivityTracker.addWorkNote(note);
+                input.value = '';
+            } else if (!note) {
+                alert('Vui lòng nhập nội dung ghi chú!');
+            }
+        }
+        
+        function updateAnalytics() {
+            if (!productivityTracker) return;
+            
+            // Update stats
+            productivityTracker.updateStatsDisplay();
+            
+            // Update emotion chart
+            const chartData = productivityTracker.generateEmotionChart();
+            const chartContainer = document.getElementById('emotionChart');
+            
+            if (chartData.length > 0) {
+                const chartHTML = chartData.map(item => `
+                    <div class="chart-bar">
+                        <div class="chart-label">${productivityTracker.getEmotionEmoji(item.emotion)} ${item.emotion}</div>
+                        <div class="chart-bar-bg">
+                            <div class="chart-bar-fill" style="width: ${item.percentage}%"></div>
+                        </div>
+                        <div class="chart-value">${item.percentage}%</div>
+                    </div>
+                `).join('');
+                
+                chartContainer.innerHTML = chartHTML;
+            }
+            
+            // Update timeline
+            updateEmotionTimeline();
+        }
+        
+        function updateEmotionTimeline() {
+            if (!productivityTracker) return;
+            
+            const timeline = document.getElementById('emotionTimeline');
+            const history = productivityTracker.emotionHistory.slice(-10).reverse();
+            
+            if (history.length === 0) {
+                timeline.innerHTML = '<p class="hint">Chưa có dữ liệu lịch sử</p>';
+                return;
+            }
+            
+            const timelineHTML = history.map(item => {
+                const date = new Date(item.timestamp);
+                const emoji = productivityTracker.getEmotionEmoji(item.emotion);
+                
+                return `
+                    <div class="timeline-item">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content">
+                            <span class="timeline-emoji">${emoji}</span>
+                            <span class="timeline-emotion">${item.emotion}</span>
+                            <span class="timeline-score">Tập trung: ${item.focusScore}/100</span>
+                            <span class="timeline-time">${date.toLocaleTimeString('vi-VN')}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            timeline.innerHTML = timelineHTML;
+        }
+        
+        // Allow Enter key to add note
+        document.addEventListener('DOMContentLoaded', () => {
+            const noteInput = document.getElementById('noteInput');
+            if (noteInput) {
+                noteInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        addNote();
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html>

@@ -1,0 +1,529 @@
+// ============================================
+// PRODUCTIVITY TRACKER - AI HỖ TRỢ CÔNG VIỆC
+// ============================================
+
+class ProductivityTracker {
+    constructor() {
+        // Trạng thái làm việc
+        this.workSessions = [];
+        this.currentSession = null;
+        this.emotionHistory = [];
+        this.focusScore = 100;
+        this.breakSuggested = false;
+        
+        // Pomodoro Timer
+        this.pomodoroTime = 25 * 60; // 25 phút
+        this.breakTime = 5 * 60; // 5 phút
+        this.pomodoroCount = 0;
+        this.timerInterval = null;
+        this.isPomodoroRunning = false;
+        this.currentTime = 0;
+        this.isWorkTime = true;
+        
+        // Thống kê
+        this.stats = {
+            totalWorkTime: 0,
+            totalBreakTime: 0,
+            focusedTime: 0,
+            distractedTime: 0,
+            stressTime: 0,
+            happyTime: 0
+        };
+        
+        // Ghi chú công việc
+        this.workNotes = [];
+        
+        this.init();
+    }
+    
+    init() {
+        this.loadData();
+        this.setupUI();
+        this.updateStatsDisplay();
+    }
+    
+    // ============================================
+    // PHÂN TÍCH CẢM XÚC CHO CÔNG VIỆC
+    // ============================================
+    
+    analyzeWorkState(emotion, confidence) {
+        const timestamp = Date.now();
+        
+        // Thêm vào lịch sử
+        this.emotionHistory.push({
+            emotion,
+            confidence,
+            timestamp,
+            focusScore: this.calculateFocusScore(emotion)
+        });
+        
+        // Giữ lịch sử 100 mục gần nhất
+        if (this.emotionHistory.length > 100) {
+            this.emotionHistory.shift();
+        }
+        
+        // Cập nhật điểm tập trung
+        this.updateFocusScore(emotion);
+        
+        // Phân tích trạng thái
+        const workState = this.getWorkState(emotion);
+        this.updateWorkState(workState);
+        
+        // Kiểm tra cần nghỉ ngơi
+        this.checkBreakNeeded();
+        
+        // Lưu dữ liệu
+        this.saveData();
+        
+        return workState;
+    }
+    
+    calculateFocusScore(emotion) {
+        const focusMap = {
+            'neutral': 90,
+            'happy': 85,
+            'surprised': 60,
+            'sad': 40,
+            'angry': 30,
+            'fearful': 25,
+            'disgusted': 35
+        };
+        return focusMap[emotion] || 50;
+    }
+    
+    updateFocusScore(emotion) {
+        const emotionScore = this.calculateFocusScore(emotion);
+        // Điểm tập trung trung bình trượt
+        this.focusScore = (this.focusScore * 0.8) + (emotionScore * 0.2);
+    }
+    
+    getWorkState(emotion) {
+        if (['neutral', 'happy'].includes(emotion)) {
+            return {
+                state: 'focused',
+                icon: '🎯',
+                message: 'Bạn đang tập trung tốt!',
+                color: '#4CAF50'
+            };
+        } else if (['sad', 'fearful'].includes(emotion)) {
+            return {
+                state: 'tired',
+                icon: '😴',
+                message: 'Bạn có vẻ mệt mỏi. Cần nghỉ ngơi?',
+                color: '#FF9800'
+            };
+        } else if (['angry', 'disgusted'].includes(emotion)) {
+            return {
+                state: 'stressed',
+                icon: '😤',
+                message: 'Bạn đang căng thẳng. Hít thở sâu nhé!',
+                color: '#F44336'
+            };
+        } else {
+            return {
+                state: 'distracted',
+                icon: '🤔',
+                message: 'Bạn có vẻ mất tập trung',
+                color: '#2196F3'
+            };
+        }
+    }
+    
+    updateWorkState(workState) {
+        const stateDisplay = document.getElementById('workState');
+        if (stateDisplay) {
+            stateDisplay.innerHTML = `
+                <div class="work-state-card" style="border-left: 4px solid ${workState.color}">
+                    <div class="state-icon">${workState.icon}</div>
+                    <div class="state-info">
+                        <div class="state-label">${workState.state.toUpperCase()}</div>
+                        <div class="state-message">${workState.message}</div>
+                    </div>
+                    <div class="focus-score">
+                        <div class="score-label">Điểm tập trung</div>
+                        <div class="score-value">${Math.round(this.focusScore)}/100</div>
+                    </div>
+                </div>
+            `;
+        }
+    }
+    
+    checkBreakNeeded() {
+        // Tính toán thời gian làm việc liên tục
+        const recentHistory = this.emotionHistory.slice(-20);
+        const avgFocus = recentHistory.reduce((sum, item) => sum + item.focusScore, 0) / recentHistory.length;
+        
+        // Nếu điểm tập trung thấp và chưa gợi ý nghỉ
+        if (avgFocus < 50 && !this.breakSuggested) {
+            this.suggestBreak();
+        } else if (avgFocus > 70) {
+            this.breakSuggested = false;
+        }
+    }
+    
+    suggestBreak() {
+        this.breakSuggested = true;
+        this.showNotification('💡 Gợi ý nghỉ ngơi', 'Bạn đã làm việc lâu rồi. Nghỉ ngơi 5 phút nhé!', 'warning');
+        
+        // Phát âm thanh nhắc nhở
+        this.playSound('notification');
+    }
+    
+    // ============================================
+    // POMODORO TIMER
+    // ============================================
+    
+    startPomodoro() {
+        if (this.isPomodoroRunning) return;
+        
+        this.isPomodoroRunning = true;
+        this.isWorkTime = true;
+        this.currentTime = this.pomodoroTime;
+        
+        this.updatePomodoroDisplay();
+        
+        this.timerInterval = setInterval(() => {
+            this.currentTime--;
+            
+            if (this.currentTime <= 0) {
+                this.pomodoroComplete();
+            }
+            
+            this.updatePomodoroDisplay();
+        }, 1000);
+        
+        this.showNotification('🍅 Pomodoro Bắt Đầu', 'Tập trung làm việc trong 25 phút!', 'success');
+    }
+    
+    stopPomodoro() {
+        this.isPomodoroRunning = false;
+        clearInterval(this.timerInterval);
+        this.updatePomodoroDisplay();
+    }
+    
+    resetPomodoro() {
+        this.stopPomodoro();
+        this.currentTime = this.pomodoroTime;
+        this.isWorkTime = true;
+        this.updatePomodoroDisplay();
+    }
+    
+    pomodoroComplete() {
+        if (this.isWorkTime) {
+            // Hoàn thành 1 pomodoro
+            this.pomodoroCount++;
+            this.stats.totalWorkTime += this.pomodoroTime;
+            
+            this.playSound('complete');
+            this.showNotification('✅ Hoàn Thành!', 'Bạn đã hoàn thành 1 Pomodoro! Nghỉ ngơi 5 phút.', 'success');
+            
+            // Chuyển sang thời gian nghỉ
+            this.isWorkTime = false;
+            this.currentTime = this.breakTime;
+        } else {
+            // Hoàn thành nghỉ ngơi
+            this.stats.totalBreakTime += this.breakTime;
+            
+            this.playSound('notification');
+            this.showNotification('🎯 Sẵn Sàng!', 'Hết giờ nghỉ. Bắt đầu Pomodoro mới?', 'info');
+            
+            this.stopPomodoro();
+        }
+        
+        this.saveData();
+    }
+    
+    updatePomodoroDisplay() {
+        const display = document.getElementById('pomodoroTimer');
+        if (!display) return;
+        
+        const minutes = Math.floor(this.currentTime / 60);
+        const seconds = this.currentTime % 60;
+        const timeText = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        
+        const statusText = this.isWorkTime ? '🍅 Làm việc' : '☕ Nghỉ ngơi';
+        const progressPercent = this.isWorkTime 
+            ? ((this.pomodoroTime - this.currentTime) / this.pomodoroTime) * 100
+            : ((this.breakTime - this.currentTime) / this.breakTime) * 100;
+        
+        display.innerHTML = `
+            <div class="pomodoro-card">
+                <div class="pomodoro-header">
+                    <span class="pomodoro-status">${statusText}</span>
+                    <span class="pomodoro-count">Chu kỳ: ${this.pomodoroCount}</span>
+                </div>
+                <div class="pomodoro-time">${timeText}</div>
+                <div class="pomodoro-progress">
+                    <div class="progress-bar" style="width: ${progressPercent}%"></div>
+                </div>
+                <div class="pomodoro-controls">
+                    <button onclick="productivityTracker.startPomodoro()" ${this.isPomodoroRunning ? 'disabled' : ''}>
+                        ▶️ Bắt đầu
+                    </button>
+                    <button onclick="productivityTracker.stopPomodoro()" ${!this.isPomodoroRunning ? 'disabled' : ''}>
+                        ⏸️ Tạm dừng
+                    </button>
+                    <button onclick="productivityTracker.resetPomodoro()">
+                        🔄 Đặt lại
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+    
+    // ============================================
+    // GHI CHÚ CÔNG VIỆC
+    // ============================================
+    
+    addWorkNote(note) {
+        const noteData = {
+            id: Date.now(),
+            text: note,
+            timestamp: Date.now(),
+            emotion: this.emotionHistory.length > 0 
+                ? this.emotionHistory[this.emotionHistory.length - 1].emotion 
+                : 'neutral',
+            focusScore: Math.round(this.focusScore)
+        };
+        
+        this.workNotes.unshift(noteData);
+        this.saveData();
+        this.updateNotesDisplay();
+        
+        return noteData;
+    }
+    
+    deleteWorkNote(noteId) {
+        this.workNotes = this.workNotes.filter(note => note.id !== noteId);
+        this.saveData();
+        this.updateNotesDisplay();
+    }
+    
+    updateNotesDisplay() {
+        const notesContainer = document.getElementById('workNotes');
+        if (!notesContainer) return;
+        
+        if (this.workNotes.length === 0) {
+            notesContainer.innerHTML = '<p class="no-notes">Chưa có ghi chú nào. Thêm ghi chú đầu tiên!</p>';
+            return;
+        }
+        
+        const notesHTML = this.workNotes.map(note => {
+            const date = new Date(note.timestamp);
+            const emotionEmoji = this.getEmotionEmoji(note.emotion);
+            
+            return `
+                <div class="work-note-item">
+                    <div class="note-header">
+                        <span class="note-emotion">${emotionEmoji}</span>
+                        <span class="note-time">${date.toLocaleString('vi-VN')}</span>
+                        <button class="note-delete" onclick="productivityTracker.deleteWorkNote(${note.id})">🗑️</button>
+                    </div>
+                    <div class="note-text">${note.text}</div>
+                    <div class="note-footer">
+                        <span class="note-focus">Tập trung: ${note.focusScore}/100</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        
+        notesContainer.innerHTML = notesHTML;
+    }
+    
+    getEmotionEmoji(emotion) {
+        const emojiMap = {
+            'happy': '😊',
+            'sad': '😢',
+            'angry': '😠',
+            'surprised': '😮',
+            'neutral': '😐',
+            'fearful': '😨',
+            'disgusted': '🤢'
+        };
+        return emojiMap[emotion] || '🤖';
+    }
+    
+    // ============================================
+    // THỐNG KÊ & BÁO CÁO
+    // ============================================
+    
+    updateStatsDisplay() {
+        const statsContainer = document.getElementById('productivityStats');
+        if (!statsContainer) return;
+        
+        const totalTime = this.stats.totalWorkTime + this.stats.totalBreakTime;
+        const focusRate = totalTime > 0 
+            ? ((this.stats.focusedTime / totalTime) * 100).toFixed(1) 
+            : 0;
+        
+        statsContainer.innerHTML = `
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">⏱️</div>
+                    <div class="stat-label">Tổng thời gian</div>
+                    <div class="stat-value">${this.formatTime(totalTime)}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🎯</div>
+                    <div class="stat-label">Thời gian tập trung</div>
+                    <div class="stat-value">${this.formatTime(this.stats.focusedTime)}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📊</div>
+                    <div class="stat-label">Tỷ lệ tập trung</div>
+                    <div class="stat-value">${focusRate}%</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🍅</div>
+                    <div class="stat-label">Pomodoro hoàn thành</div>
+                    <div class="stat-value">${this.pomodoroCount}</div>
+                </div>
+            </div>
+        `;
+    }
+    
+    generateEmotionChart() {
+        // Phân tích phân bố cảm xúc
+        const emotionCounts = {};
+        this.emotionHistory.forEach(item => {
+            emotionCounts[item.emotion] = (emotionCounts[item.emotion] || 0) + 1;
+        });
+        
+        const chartData = Object.entries(emotionCounts).map(([emotion, count]) => ({
+            emotion,
+            count,
+            percentage: ((count / this.emotionHistory.length) * 100).toFixed(1)
+        }));
+        
+        return chartData;
+    }
+    
+    // ============================================
+    // TIỆN ÍCH
+    // ============================================
+    
+    formatTime(seconds) {
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        
+        if (hours > 0) {
+            return `${hours}h ${minutes}m`;
+        }
+        return `${minutes}m`;
+    }
+    
+    playSound(type) {
+        // Tạo âm thanh đơn giản
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        if (type === 'notification') {
+            oscillator.frequency.value = 800;
+            gainNode.gain.value = 0.3;
+        } else if (type === 'complete') {
+            oscillator.frequency.value = 1000;
+            gainNode.gain.value = 0.3;
+        }
+        
+        oscillator.start();
+        oscillator.stop(audioContext.currentTime + 0.2);
+    }
+    
+    showNotification(title, message, type = 'info') {
+        // Tạo notification UI
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.innerHTML = `
+            <div class="notification-header">${title}</div>
+            <div class="notification-body">${message}</div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Tự động xóa sau 5 giây
+        setTimeout(() => {
+            notification.style.animation = 'fadeOut 0.3s ease-out';
+            setTimeout(() => notification.remove(), 300);
+        }, 5000);
+        
+        // Browser notification (nếu được phép)
+        if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification(title, { body: message });
+        }
+    }
+    
+    setupUI() {
+        // Yêu cầu quyền notification
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+    }
+    
+    // ============================================
+    // LƯU TRỮ DỮ LIỆU
+    // ============================================
+    
+    saveData() {
+        const data = {
+            stats: this.stats,
+            workNotes: this.workNotes,
+            pomodoroCount: this.pomodoroCount,
+            emotionHistory: this.emotionHistory.slice(-50), // Lưu 50 mục gần nhất
+            focusScore: this.focusScore
+        };
+        
+        localStorage.setItem('productivityData', JSON.stringify(data));
+    }
+    
+    loadData() {
+        try {
+            const savedData = localStorage.getItem('productivityData');
+            if (savedData) {
+                const data = JSON.parse(savedData);
+                this.stats = data.stats || this.stats;
+                this.workNotes = data.workNotes || [];
+                this.pomodoroCount = data.pomodoroCount || 0;
+                this.emotionHistory = data.emotionHistory || [];
+                this.focusScore = data.focusScore || 100;
+            }
+        } catch (error) {
+            console.error('Error loading data:', error);
+        }
+    }
+    
+    resetData() {
+        if (confirm('Bạn có chắc muốn xóa tất cả dữ liệu? Hành động này không thể hoàn tác!')) {
+            localStorage.removeItem('productivityData');
+            window.location.reload();
+        }
+    }
+    
+    exportData() {
+        const data = {
+            stats: this.stats,
+            workNotes: this.workNotes,
+            emotionHistory: this.emotionHistory,
+            exportDate: new Date().toISOString()
+        };
+        
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `productivity-report-${Date.now()}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+}
+
+// Khởi tạo toàn cục
+let productivityTracker = null;
+
+// Khởi tạo khi DOM ready
+document.addEventListener('DOMContentLoaded', () => {
+    productivityTracker = new ProductivityTracker();
+});

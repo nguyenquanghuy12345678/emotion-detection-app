@@ -181,6 +181,16 @@ class EmotionDetectionApp {
                     
                     if (confidence > CONFIG.MIN_CONFIDENCE) {
                         this.emotionHandler.updateEmotionDisplay(dominantEmotion, confidence);
+                        
+                        // ===== TÍCH HỢP PRODUCTIVITY TRACKER =====
+                        // Gửi dữ liệu cảm xúc đến productivity tracker
+                        if (window.productivityTracker) {
+                            const workState = window.productivityTracker.analyzeWorkState(dominantEmotion, confidence);
+                            // Cập nhật thống kê
+                            window.productivityTracker.updateStatsDisplay();
+                            window.productivityTracker.updatePomodoroDisplay();
+                            window.productivityTracker.updateNotesDisplay();
+                        }
                     }
                 }
 
