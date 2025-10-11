@@ -33,6 +33,11 @@ class ProductivityTracker {
         // Ghi chú công việc
         this.workNotes = [];
         
+        // Theo dõi vắng mặt
+        this.absenceLog = [];
+        this.lunchBreakTaken = false;
+        this.nightWarning = false;
+        
         this.init();
     }
     
@@ -473,7 +478,8 @@ class ProductivityTracker {
             workNotes: this.workNotes,
             pomodoroCount: this.pomodoroCount,
             emotionHistory: this.emotionHistory.slice(-50), // Lưu 50 mục gần nhất
-            focusScore: this.focusScore
+            focusScore: this.focusScore,
+            absenceLog: this.absenceLog
         };
         
         localStorage.setItem('productivityData', JSON.stringify(data));
@@ -489,6 +495,7 @@ class ProductivityTracker {
                 this.pomodoroCount = data.pomodoroCount || 0;
                 this.emotionHistory = data.emotionHistory || [];
                 this.focusScore = data.focusScore || 100;
+                this.absenceLog = data.absenceLog || [];
             }
         } catch (error) {
             console.error('Error loading data:', error);
@@ -502,11 +509,23 @@ class ProductivityTracker {
         }
     }
     
+    recordAbsence(timestamp) {
+        this.absenceLog.push({
+            timestamp,
+            duration: 0,
+            endTime: null
+        });
+        this.saveData();
+    }
+    
     exportData() {
         const data = {
             stats: this.stats,
             workNotes: this.workNotes,
             emotionHistory: this.emotionHistory,
+            absenceLog: this.absenceLog,
+            focusScore: this.focusScore,
+            pomodoroCount: this.pomodoroCount,
             exportDate: new Date().toISOString()
         };
         

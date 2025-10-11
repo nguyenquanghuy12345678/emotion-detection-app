@@ -18,6 +18,41 @@
         <button class="tab-btn active" data-tab="emotion">🎭 Nhận Diện Cảm Xúc</button>
         <button class="tab-btn" data-tab="productivity">💼 Hỗ Trợ Công Việc</button>
         <button class="tab-btn" data-tab="analytics">📊 Thống Kê</button>
+        <button class="tab-btn" data-tab="assistant">🤖 AI Trợ Lý</button>
+    </div>
+
+    <!-- AI Chat Button (Floating) -->
+    <button id="chatToggle" class="chat-toggle" onclick="toggleChat()">
+        💬
+    </button>
+
+    <!-- AI Chat Panel -->
+    <div id="chatPanel" class="chat-panel">
+        <div class="chat-header">
+            <h3>🤖 AI Trợ Lý Thông Minh</h3>
+            <button onclick="toggleChat()" class="chat-close">✕</button>
+        </div>
+        <div class="chat-messages" id="chatMessages">
+            <div class="chat-message chat-message-bot">
+                <div class="message-avatar">🤖</div>
+                <div class="message-content">
+                    <div class="message-text">
+                        Xin chào! Tôi là AI Assistant. Tôi có thể giúp bạn:<br><br>
+                        ✅ Theo dõi năng suất làm việc<br>
+                        ✅ Phát hiện căng thẳng, mệt mỏi<br>
+                        ✅ Đề xuất nghỉ ngơi thông minh<br>
+                        ✅ Báo cáo & thống kê<br>
+                        ✅ Điều khiển Pomodoro<br><br>
+                        Hãy hỏi tôi bất cứ điều gì!
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="chat-input-area">
+            <input type="text" id="chatInput" placeholder="Nhập tin nhắn..." onkeypress="if(event.key==='Enter') sendMessage()" />
+            <button onclick="sendMessage()" class="btn-send">📤</button>
+            <button onclick="toggleVoice()" id="voiceBtn" class="btn-voice">🎤</button>
+        </div>
     </div>
 
     <!-- Main Container -->
@@ -161,6 +196,132 @@
                 </div>
             </div>
         </div>
+
+        <!-- ============================================
+             AI ASSISTANT TAB - TRỢ LÝ ẢO
+        ============================================ -->
+        <div id="assistantTab" class="tab-content" style="display: none;">
+            <!-- Chế độ tự động -->
+            <div class="section-card">
+                <h2>⚙️ Cài Đặt Tự Động</h2>
+                <div class="settings-grid">
+                    <div class="setting-item">
+                        <label class="switch">
+                            <input type="checkbox" id="autoModeToggle" onchange="toggleAutoMode()" checked>
+                            <span class="slider"></span>
+                        </label>
+                        <div class="setting-label">
+                            <strong>🤖 Chế độ tự động</strong>
+                            <p>Tự động phát hiện và cảnh báo</p>
+                        </div>
+                    </div>
+                    
+                    <div class="setting-item">
+                        <label class="switch">
+                            <input type="checkbox" id="alertsToggle" checked>
+                            <span class="slider"></span>
+                        </label>
+                        <div class="setting-label">
+                            <strong>🔔 Cảnh báo</strong>
+                            <p>Nhận cảnh báo về sức khỏe</p>
+                        </div>
+                    </div>
+                    
+                    <div class="setting-item">
+                        <label class="switch">
+                            <input type="checkbox" id="suggestionsToggle" checked>
+                            <span class="slider"></span>
+                        </label>
+                        <div class="setting-label">
+                            <strong>💡 Gợi ý</strong>
+                            <p>Nhận gợi ý thông minh</p>
+                        </div>
+                    </div>
+                    
+                    <div class="setting-item">
+                        <label class="switch">
+                            <input type="checkbox" id="voiceToggle">
+                            <span class="slider"></span>
+                        </label>
+                        <div class="setting-label">
+                            <strong>🔊 Giọng nói</strong>
+                            <p>Đọc cảnh báo bằng giọng</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ngưỡng cảnh báo -->
+            <div class="section-card">
+                <h2>⚠️ Ngưỡng Cảnh Báo</h2>
+                <div class="threshold-settings">
+                    <div class="threshold-item">
+                        <label>Căng thẳng liên tục (lần):</label>
+                        <input type="number" id="stressThreshold" value="3" min="1" max="10" />
+                    </div>
+                    <div class="threshold-item">
+                        <label>Mệt mỏi liên tục (lần):</label>
+                        <input type="number" id="tiredThreshold" value="5" min="1" max="10" />
+                    </div>
+                    <div class="threshold-item">
+                        <label>Điểm tập trung tối thiểu:</label>
+                        <input type="number" id="focusThreshold" value="40" min="0" max="100" />
+                    </div>
+                    <div class="threshold-item">
+                        <label>Không phát hiện khuôn mặt (lần):</label>
+                        <input type="number" id="absenceThreshold" value="10" min="1" max="20" />
+                    </div>
+                </div>
+                <button onclick="updateThresholds()" class="btn-primary">💾 Lưu cài đặt</button>
+            </div>
+
+            <!-- Lịch sử cảnh báo -->
+            <div class="section-card">
+                <h2>📜 Lịch Sử Cảnh Báo</h2>
+                <div id="alertHistory" class="alert-history">
+                    <p class="hint">Lịch sử cảnh báo sẽ hiển thị ở đây</p>
+                </div>
+            </div>
+
+            <!-- Kịch bản sử dụng -->
+            <div class="section-card">
+                <h2>🎯 Kịch Bản Sử Dụng</h2>
+                <div class="use-cases">
+                    <div class="use-case-card">
+                        <div class="use-case-icon">📚</div>
+                        <h3>Học sinh / Sinh viên</h3>
+                        <ul>
+                            <li>✅ Theo dõi thời gian học tập</li>
+                            <li>✅ Phát hiện mất tập trung</li>
+                            <li>✅ Chống gian lận thi online</li>
+                            <li>✅ Nhắc nghỉ ngơi khi căng thẳng</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="use-case-card">
+                        <div class="use-case-icon">💼</div>
+                        <h3>Nhân viên Remote</h3>
+                        <ul>
+                            <li>✅ Tính giờ làm việc chính xác</li>
+                            <li>✅ Báo cáo năng suất cho quản lý</li>
+                            <li>✅ Phát hiện vắng mặt</li>
+                            <li>✅ Theo dõi hiệu suất</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="use-case-card">
+                        <div class="use-case-icon">🧑‍💼</div>
+                        <h3>Freelancer</h3>
+                        <ul>
+                            <li>✅ Theo dõi thời gian dự án</li>
+                            <li>✅ Tối ưu năng suất</li>
+                            <li>✅ Quản lý nhiều task</li>
+                            <li>✅ Xuất báo cáo cho khách hàng</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Hidden Audio Elements -->
@@ -173,7 +334,66 @@
     <script src="js/emotions.js"></script>
     <script src="js/camera.js"></script>
     <script src="js/productivity.js"></script>
+    <script src="js/ai-assistant.js"></script>
     <script src="js/app.js"></script>
+    
+    <!-- Chat & Assistant Functions -->
+    <script>
+        function toggleChat() {
+            const chatPanel = document.getElementById('chatPanel');
+            const chatToggle = document.getElementById('chatToggle');
+            
+            if (chatPanel.classList.contains('show')) {
+                chatPanel.classList.remove('show');
+                chatToggle.style.display = 'flex';
+            } else {
+                chatPanel.classList.add('show');
+                chatToggle.style.display = 'none';
+            }
+        }
+        
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (message && window.aiAssistant) {
+                window.aiAssistant.processMessage(message);
+                input.value = '';
+            }
+        }
+        
+        function toggleVoice() {
+            if (window.aiAssistant) {
+                if (window.aiAssistant.isListening) {
+                    window.aiAssistant.stopListening();
+                } else {
+                    window.aiAssistant.startListening();
+                }
+            }
+        }
+        
+        function toggleAutoMode() {
+            if (window.aiAssistant) {
+                window.aiAssistant.toggleAutoMode();
+            }
+        }
+        
+        function updateThresholds() {
+            if (window.aiAssistant) {
+                const thresholds = {
+                    stressLevel: parseInt(document.getElementById('stressThreshold').value),
+                    tirednessLevel: parseInt(document.getElementById('tiredThreshold').value),
+                    focusDropLevel: parseInt(document.getElementById('focusThreshold').value),
+                    noFaceDetected: parseInt(document.getElementById('absenceThreshold').value)
+                };
+                
+                window.aiAssistant.thresholds = thresholds;
+                window.aiAssistant.saveSettings();
+                
+                alert('✅ Đã lưu cài đặt!');
+            }
+        }
+    </script>
     
     <!-- Tab Switching Script -->
     <script>
@@ -202,6 +422,7 @@
             const emotionContent = document.querySelector('.video-container').parentElement;
             document.getElementById('productivityTab').style.display = 'none';
             document.getElementById('analyticsTab').style.display = 'none';
+            document.getElementById('assistantTab').style.display = 'none';
             
             // Show emotion detection elements
             const emotionElements = [
@@ -227,7 +448,39 @@
                 });
                 document.getElementById('analyticsTab').style.display = 'block';
                 updateAnalytics();
+            } else if (tabName === 'assistant') {
+                emotionElements.forEach(selector => {
+                    const el = document.querySelector(selector);
+                    if (el) el.style.display = 'none';
+                });
+                document.getElementById('assistantTab').style.display = 'block';
+                loadAlertHistory();
             }
+        }
+        
+        function loadAlertHistory() {
+            const historyContainer = document.getElementById('alertHistory');
+            const logs = JSON.parse(localStorage.getItem('alertLogs') || '[]');
+            
+            if (logs.length === 0) {
+                historyContainer.innerHTML = '<p class="hint">Chưa có cảnh báo nào</p>';
+                return;
+            }
+            
+            const historyHTML = logs.slice(0, 20).map(log => {
+                const date = new Date(log.timestamp);
+                const priorityClass = `priority-${log.priority}`;
+                
+                return `
+                    <div class="history-item ${priorityClass}">
+                        <div class="history-time">${date.toLocaleString('vi-VN')}</div>
+                        <div class="history-title">${log.title}</div>
+                        <div class="history-message">${log.message}</div>
+                    </div>
+                `;
+            }).join('');
+            
+            historyContainer.innerHTML = historyHTML;
         }
         
         function addNote() {
