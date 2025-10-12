@@ -139,10 +139,10 @@
             <div class="section-card">
                 <h2>⚡ Hành Động Nhanh</h2>
                 <div class="quick-actions">
-                    <button onclick="productivityTracker.exportData()" class="action-btn">
+                    <button onclick="if(window.productivityTracker) window.productivityTracker.exportData()" class="action-btn">
                         💾 Xuất báo cáo
                     </button>
-                    <button onclick="productivityTracker.resetData()" class="action-btn danger">
+                    <button onclick="if(window.productivityTracker && confirm('Xóa tất cả dữ liệu?')) window.productivityTracker.resetData()" class="action-btn danger">
                         🗑️ Xóa dữ liệu
                     </button>
                 </div>
@@ -414,7 +414,7 @@
         
         // Update UI functions
         function updateProductivityUI() {
-            if (!productivityTracker) return;
+            if (!window.productivityTracker) return;
             
             // Update Pomodoro display
             const pomodoroTimer = document.getElementById('pomodoroTimer');
@@ -451,8 +451,8 @@
             
             // Update productivity stats
             const statsDiv = document.getElementById('productivityStats');
-            if (statsDiv) {
-                const stats = productivityTracker.getCurrentStats();
+            if (statsDiv && window.productivityTracker) {
+                const stats = window.productivityTracker.getCurrentStats();
                 statsDiv.innerHTML = `
                     <div class="stats-grid">
                         <div class="stat-card">
@@ -479,7 +479,7 @@
                         <div class="stat-card">
                             <div class="stat-icon">🎯</div>
                             <div class="stat-content">
-                                <div class="stat-value">${Math.round(productivityTracker.focusScore)}</div>
+                                <div class="stat-value">${Math.round(window.productivityTracker.focusScore)}</div>
                                 <div class="stat-label">Điểm tập trung</div>
                             </div>
                         </div>
@@ -824,32 +824,23 @@
             historyContainer.innerHTML = historyHTML;
         }
         
-        function addNote() {
-            const input = document.getElementById('noteInput');
-            const note = input.value.trim();
-            
-            if (note && productivityTracker) {
-                productivityTracker.addWorkNote(note);
-                input.value = '';
-            } else if (!note) {
-                alert('Vui lòng nhập nội dung ghi chú!');
-            }
-        }
+        // addNote() function is defined above in "Initialize Global Objects" script
+        // Removed duplicate to avoid "already declared" error
         
         function updateAnalytics() {
-            if (!productivityTracker) return;
+            if (!window.productivityTracker) return;
             
             // Update stats
-            productivityTracker.updateStatsDisplay();
+            window.productivityTracker.updateStatsDisplay();
             
             // Update emotion chart
-            const chartData = productivityTracker.generateEmotionChart();
+            const chartData = window.productivityTracker.generateEmotionChart();
             const chartContainer = document.getElementById('emotionChart');
             
             if (chartData.length > 0) {
                 const chartHTML = chartData.map(item => `
                     <div class="chart-bar">
-                        <div class="chart-label">${productivityTracker.getEmotionEmoji(item.emotion)} ${item.emotion}</div>
+                        <div class="chart-label">${window.productivityTracker.getEmotionEmoji(item.emotion)} ${item.emotion}</div>
                         <div class="chart-bar-bg">
                             <div class="chart-bar-fill" style="width: ${item.percentage}%"></div>
                         </div>
@@ -865,10 +856,10 @@
         }
         
         function updateEmotionTimeline() {
-            if (!productivityTracker) return;
+            if (!window.productivityTracker) return;
             
             const timeline = document.getElementById('emotionTimeline');
-            const history = productivityTracker.emotionHistory.slice(-10).reverse();
+            const history = window.productivityTracker.emotionHistory.slice(-10).reverse();
             
             if (history.length === 0) {
                 timeline.innerHTML = '<p class="hint">Chưa có dữ liệu lịch sử</p>';
@@ -877,7 +868,7 @@
             
             const timelineHTML = history.map(item => {
                 const date = new Date(item.timestamp);
-                const emoji = productivityTracker.getEmotionEmoji(item.emotion);
+                const emoji = window.productivityTracker.getEmotionEmoji(item.emotion);
                 
                 return `
                     <div class="timeline-item">
