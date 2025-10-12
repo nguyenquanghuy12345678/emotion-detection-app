@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DEBUG - AI Assistant Test</title>
+</head>
+<body>
+    <h1>🔍 DEBUG PAGE</h1>
+    <div id="debug"></div>
+    
+    <script src="js/config.js"></script>
+    <script src="js/emotions.js"></script>
+    <script src="js/camera.js"></script>
+    <script src="js/productivity.js"></script>
+    <script src="js/ai-assistant.js"></script>
+    <script src="js/app.js"></script>
+    
+    <script>
+        const debugDiv = document.getElementById('debug');
+        
+        function log(msg) {
+            console.log(msg);
+            debugDiv.innerHTML += `<p>${msg}</p>`;
+        }
+        
+        log('=== CHECKING FILES ===');
+        
+        setTimeout(() => {
+            log('1. Checking ProductivityTracker class...');
+            if (typeof ProductivityTracker !== 'undefined') {
+                log('✅ ProductivityTracker class FOUND');
+                try {
+                    const pt = new ProductivityTracker();
+                    log('✅ ProductivityTracker INITIALIZED');
+                    log(`   - Methods: ${Object.getOwnPropertyNames(ProductivityTracker.prototype).join(', ')}`);
+                } catch (e) {
+                    log(`❌ ProductivityTracker INIT ERROR: ${e.message}`);
+                }
+            } else {
+                log('❌ ProductivityTracker class NOT FOUND');
+            }
+            
+            log('');
+            log('2. Checking AIAssistant class...');
+            if (typeof AIAssistant !== 'undefined') {
+                log('✅ AIAssistant class FOUND');
+                try {
+                    const pt = new ProductivityTracker();
+                    const ai = new AIAssistant(pt);
+                    log('✅ AIAssistant INITIALIZED');
+                    log(`   - Methods: ${Object.getOwnPropertyNames(AIAssistant.prototype).join(', ')}`);
+                } catch (e) {
+                    log(`❌ AIAssistant INIT ERROR: ${e.message}`);
+                }
+            } else {
+                log('❌ AIAssistant class NOT FOUND');
+            }
+            
+            log('');
+            log('3. Checking EmotionDetectionApp class...');
+            if (typeof EmotionDetectionApp !== 'undefined') {
+                log('✅ EmotionDetectionApp class FOUND');
+            } else {
+                log('❌ EmotionDetectionApp class NOT FOUND');
+            }
+            
+            log('');
+            log('4. Checking face-api...');
+            if (typeof faceapi !== 'undefined') {
+                log('✅ face-api LOADED');
+            } else {
+                log('❌ face-api NOT LOADED');
+            }
+            
+            log('');
+            log('=== DONE ===');
+            log('Check console (F12) for more details');
+        }, 2000);
+    </script>
+</body>
+</html>

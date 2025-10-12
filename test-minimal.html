@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Trợ Lý - MINIMAL VERSION</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/productivity.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 AI Trợ Lý Công Việc - MINIMAL TEST</h1>
+        
+        <div class="test-section">
+            <h2>📊 Status</h2>
+            <div id="status">Loading...</div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🍅 Pomodoro Timer</h2>
+            <div id="pomodoroDisplay">25:00</div>
+            <button onclick="testStartPomodoro()">▶️ Bắt đầu</button>
+            <button onclick="testPausePomodoro()">⏸️ Tạm dừng</button>
+        </div>
+        
+        <div class="test-section">
+            <h2>📝 Work Notes</h2>
+            <input type="text" id="noteInput" placeholder="Nhập ghi chú..." />
+            <button onclick="testAddNote()">➕ Thêm</button>
+            <div id="notesList"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>💬 Chat Test</h2>
+            <input type="text" id="chatInput" placeholder="Nhập tin nhắn..." />
+            <button onclick="testChat()">📤 Gửi</button>
+            <div id="chatOutput"></div>
+        </div>
+    </div>
+    
+    <!-- Load Scripts -->
+    <script src="js/productivity.js"></script>
+    <script src="js/ai-assistant.js"></script>
+    
+    <script>
+        let productivityTracker = null;
+        let aiAssistant = null;
+        
+        // Initialize on load
+        window.addEventListener('load', () => {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = '⏳ Initializing...<br>';
+            
+            try {
+                // Check if classes exist
+                if (typeof ProductivityTracker === 'undefined') {
+                    statusDiv.innerHTML += '❌ ProductivityTracker class NOT FOUND!<br>';
+                    statusDiv.innerHTML += 'Check if js/productivity.js is loaded<br>';
+                    return;
+                }
+                statusDiv.innerHTML += '✅ ProductivityTracker class found<br>';
+                
+                if (typeof AIAssistant === 'undefined') {
+                    statusDiv.innerHTML += '❌ AIAssistant class NOT FOUND!<br>';
+                    statusDiv.innerHTML += 'Check if js/ai-assistant.js is loaded<br>';
+                    return;
+                }
+                statusDiv.innerHTML += '✅ AIAssistant class found<br>';
+                
+                // Initialize ProductivityTracker
+                statusDiv.innerHTML += '⏳ Creating ProductivityTracker...<br>';
+                productivityTracker = new ProductivityTracker();
+                window.productivityTracker = productivityTracker;
+                statusDiv.innerHTML += '✅ ProductivityTracker created!<br>';
+                
+                // Initialize AIAssistant
+                statusDiv.innerHTML += '⏳ Creating AIAssistant...<br>';
+                aiAssistant = new AIAssistant(productivityTracker);
+                window.aiAssistant = aiAssistant;
+                statusDiv.innerHTML += '✅ AIAssistant created!<br>';
+                
+                statusDiv.innerHTML += '<br><strong style="color: green;">🎉 ALL SYSTEMS READY!</strong>';
+                
+            } catch (error) {
+                statusDiv.innerHTML += '<br>❌ <strong>ERROR:</strong> ' + error.message + '<br>';
+                statusDiv.innerHTML += '<pre>' + error.stack + '</pre>';
+                console.error('Initialization error:', error);
+            }
+        });
+        
+        // Test Functions
+        function testStartPomodoro() {
+            if (!productivityTracker) {
+                alert('❌ ProductivityTracker not initialized!');
+                return;
+            }
+            
+            try {
+                productivityTracker.startPomodoro();
+                alert('✅ Pomodoro started!');
+                
+                // Update display every second
+                setInterval(() => {
+                    const display = document.getElementById('pomodoroDisplay');
+                    const mins = Math.floor(productivityTracker.currentTime / 60);
+                    const secs = productivityTracker.currentTime % 60;
+                    display.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+                }, 1000);
+                
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+                console.error(error);
+            }
+        }
+        
+        function testPausePomodoro() {
+            if (!productivityTracker) {
+                alert('❌ ProductivityTracker not initialized!');
+                return;
+            }
+            
+            try {
+                productivityTracker.pausePomodoro();
+                alert('✅ Pomodoro paused!');
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+                console.error(error);
+            }
+        }
+        
+        function testAddNote() {
+            if (!productivityTracker) {
+                alert('❌ ProductivityTracker not initialized!');
+                return;
+            }
+            
+            const input = document.getElementById('noteInput');
+            const note = input.value.trim();
+            
+            if (!note) {
+                alert('❌ Please enter a note!');
+                return;
+            }
+            
+            try {
+                productivityTracker.addWorkNote(note);
+                input.value = '';
+                
+                // Update notes list
+                const notesList = document.getElementById('notesList');
+                const notes = productivityTracker.workNotes;
+                notesList.innerHTML = '<ul>' + 
+                    notes.map(n => `<li>${n.note} <small>(${new Date(n.timestamp).toLocaleTimeString()})</small></li>`).join('') +
+                    '</ul>';
+                    
+                alert('✅ Note added! Total: ' + notes.length);
+                
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+                console.error(error);
+            }
+        }
+        
+        function testChat() {
+            if (!aiAssistant) {
+                alert('❌ AIAssistant not initialized!');
+                return;
+            }
+            
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (!message) {
+                alert('❌ Please enter a message!');
+                return;
+            }
+            
+            try {
+                const output = document.getElementById('chatOutput');
+                output.innerHTML += `<p><strong>You:</strong> ${message}</p>`;
+                
+                // Override addMessageToChat to capture response
+                const originalAddMessage = aiAssistant.addMessageToChat;
+                aiAssistant.addMessageToChat = function(sender, msg) {
+                    if (sender === 'bot') {
+                        output.innerHTML += `<p><strong>Bot:</strong> ${msg}</p>`;
+                    }
+                    if (originalAddMessage) {
+                        originalAddMessage.call(this, sender, msg);
+                    }
+                };
+                
+                aiAssistant.processMessage(message);
+                input.value = '';
+                
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+                console.error(error);
+            }
+        }
+        
+        // Allow Enter key
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('noteInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') testAddNote();
+            });
+            
+            document.getElementById('chatInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') testChat();
+            });
+        });
+    </script>
+    
+    <style>
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        input[type="text"] {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 60%;
+            margin: 5px;
+        }
+        #status {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: monospace;
+            line-height: 1.6;
+        }
+        #pomodoroDisplay {
+            font-size: 48px;
+            font-weight: bold;
+            text-align: center;
+            margin: 20px 0;
+            color: #4CAF50;
+        }
+        #notesList, #chatOutput {
+            margin-top: 15px;
+            padding: 10px;
+            background: #f9f9f9;
+            border-radius: 4px;
+            min-height: 50px;
+        }
+        #chatOutput p {
+            margin: 5px 0;
+            padding: 5px;
+            background: white;
+            border-radius: 4px;
+        }
+    </style>
+</body>
+</html>

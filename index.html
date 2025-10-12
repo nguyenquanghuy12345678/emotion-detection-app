@@ -343,39 +343,73 @@
         let productivityTracker = null;
         let aiAssistant = null;
         
-        window.addEventListener('DOMContentLoaded', () => {
-            console.log('🔧 Initializing Productivity & AI systems...');
+        // Chờ window load hoàn toàn
+        window.addEventListener('load', () => {
+            console.log('🔧 Page loaded, initializing systems...');
             
-            // Đợi 1 giây để đảm bảo face-api đã load
+            // Đợi thêm 500ms để đảm bảo tất cả scripts đã parse xong
             setTimeout(() => {
                 try {
+                    console.log('🔍 Checking ProductivityTracker class...');
+                    
                     // Khởi tạo ProductivityTracker
                     if (typeof ProductivityTracker !== 'undefined') {
+                        console.log('✅ ProductivityTracker class found, creating instance...');
                         productivityTracker = new ProductivityTracker();
                         window.productivityTracker = productivityTracker;
-                        console.log('✅ ProductivityTracker initialized');
+                        console.log('✅ ProductivityTracker initialized successfully!');
+                        console.log('   Methods available:', Object.getOwnPropertyNames(Object.getPrototypeOf(productivityTracker)).slice(0, 5).join(', '));
                     } else {
-                        console.error('❌ ProductivityTracker class not found!');
+                        console.error('❌ ProductivityTracker class not found! Check js/productivity.js');
+                        alert('❌ Lỗi: Không tìm thấy ProductivityTracker class. Kiểm tra file js/productivity.js');
+                        return;
                     }
+                    
+                    console.log('🔍 Checking AIAssistant class...');
                     
                     // Khởi tạo AIAssistant
                     if (typeof AIAssistant !== 'undefined' && productivityTracker) {
+                        console.log('✅ AIAssistant class found, creating instance...');
                         aiAssistant = new AIAssistant(productivityTracker);
                         window.aiAssistant = aiAssistant;
-                        console.log('✅ AIAssistant initialized');
+                        console.log('✅ AIAssistant initialized successfully!');
+                        console.log('   Auto mode enabled:', aiAssistant.autoMode.enabled);
                     } else {
-                        console.error('❌ AIAssistant class not found!');
+                        console.error('❌ AIAssistant class not found! Check js/ai-assistant.js');
+                        alert('❌ Lỗi: Không tìm thấy AIAssistant class. Kiểm tra file js/ai-assistant.js');
+                        return;
                     }
+                    
+                    console.log('🎨 Updating UI...');
                     
                     // Cập nhật UI ban đầu
                     if (productivityTracker) {
-                        updateProductivityUI();
-                        updateAnalytics();
+                        try {
+                            updateProductivityUI();
+                            console.log('✅ Productivity UI updated');
+                        } catch (err) {
+                            console.error('❌ Error updating Productivity UI:', err);
+                        }
+                        
+                        try {
+                            updateAnalytics();
+                            console.log('✅ Analytics updated');
+                        } catch (err) {
+                            console.error('❌ Error updating Analytics:', err);
+                        }
                     }
+                    
+                    console.log('🎉 All systems initialized successfully!');
+                    console.log('✅ You can now use:');
+                    console.log('   - window.productivityTracker');
+                    console.log('   - window.aiAssistant');
+                    
                 } catch (error) {
-                    console.error('❌ Error initializing systems:', error);
+                    console.error('❌ CRITICAL ERROR initializing systems:', error);
+                    console.error('Error stack:', error.stack);
+                    alert('❌ Lỗi nghiêm trọng khi khởi tạo: ' + error.message + '\n\nXem Console (F12) để biết chi tiết.');
                 }
-            }, 1000);
+            }, 500);
         });
         
         // Update UI functions
@@ -468,25 +502,56 @@
             }
         }
         
-        // Pomodoro functions
+        // Pomodoro functions with error handling
         function startPomodoro() {
-            if (window.productivityTracker) {
+            console.log('🍅 startPomodoro() called');
+            if (!window.productivityTracker) {
+                console.error('❌ ProductivityTracker not initialized!');
+                alert('❌ Lỗi: Hệ thống chưa sẵn sàng. Hãy reload trang.');
+                return;
+            }
+            
+            try {
                 window.productivityTracker.startPomodoro();
                 updatePomodoroButtons(true, false, false);
+                console.log('✅ Pomodoro started');
+            } catch (error) {
+                console.error('❌ Error starting Pomodoro:', error);
+                alert('❌ Lỗi khi bắt đầu Pomodoro: ' + error.message);
             }
         }
         
         function pausePomodoro() {
-            if (window.productivityTracker) {
+            console.log('⏸️ pausePomodoro() called');
+            if (!window.productivityTracker) {
+                console.error('❌ ProductivityTracker not initialized!');
+                return;
+            }
+            
+            try {
                 window.productivityTracker.pausePomodoro();
                 updatePomodoroButtons(false, true, false);
+                console.log('✅ Pomodoro paused');
+            } catch (error) {
+                console.error('❌ Error pausing Pomodoro:', error);
+                alert('❌ Lỗi khi tạm dừng Pomodoro: ' + error.message);
             }
         }
         
         function resetPomodoro() {
-            if (window.productivityTracker) {
+            console.log('🔄 resetPomodoro() called');
+            if (!window.productivityTracker) {
+                console.error('❌ ProductivityTracker not initialized!');
+                return;
+            }
+            
+            try {
                 window.productivityTracker.resetPomodoro();
-                updatePomodoroButtons(false, false, true);
+                updatePomodoroButtons(false, false, false);
+                console.log('✅ Pomodoro reset');
+            } catch (error) {
+                console.error('❌ Error resetting Pomodoro:', error);
+                alert('❌ Lỗi khi reset Pomodoro: ' + error.message);
             }
         }
         
@@ -500,15 +565,37 @@
             if (resetBtn) resetBtn.disabled = resetDisabled;
         }
         
-        // Work notes functions
+        // Work notes functions with error handling
         function addNote() {
+            console.log('📝 addNote() called');
             const input = document.getElementById('noteInput');
+            
+            if (!input) {
+                console.error('❌ Note input element not found!');
+                return;
+            }
+            
             const note = input.value.trim();
             
-            if (note && window.productivityTracker) {
+            if (!note) {
+                alert('⚠️ Vui lòng nhập nội dung ghi chú!');
+                return;
+            }
+            
+            if (!window.productivityTracker) {
+                console.error('❌ ProductivityTracker not initialized!');
+                alert('❌ Lỗi: Hệ thống chưa sẵn sàng. Hãy reload trang.');
+                return;
+            }
+            
+            try {
                 window.productivityTracker.addWorkNote(note);
                 input.value = '';
                 updateWorkNotes();
+                console.log('✅ Note added:', note);
+            } catch (error) {
+                console.error('❌ Error adding note:', error);
+                alert('❌ Lỗi khi thêm ghi chú: ' + error.message);
             }
         }
         
@@ -561,28 +648,74 @@
         }
         
         function sendMessage() {
+            console.log('💬 sendMessage() called');
             const input = document.getElementById('chatInput');
+            
+            if (!input) {
+                console.error('❌ Chat input element not found!');
+                return;
+            }
+            
             const message = input.value.trim();
             
-            if (message && window.aiAssistant) {
+            if (!message) {
+                console.log('⚠️ Empty message, ignoring');
+                return;
+            }
+            
+            if (!window.aiAssistant) {
+                console.error('❌ AIAssistant not initialized!');
+                alert('❌ Lỗi: AI Assistant chưa sẵn sàng. Hãy reload trang.');
+                return;
+            }
+            
+            try {
+                console.log('📤 Sending message:', message);
                 window.aiAssistant.processMessage(message);
                 input.value = '';
+                console.log('✅ Message sent');
+            } catch (error) {
+                console.error('❌ Error sending message:', error);
+                alert('❌ Lỗi khi gửi tin nhắn: ' + error.message);
             }
         }
         
         function toggleVoice() {
-            if (window.aiAssistant) {
+            console.log('🎤 toggleVoice() called');
+            
+            if (!window.aiAssistant) {
+                console.error('❌ AIAssistant not initialized!');
+                alert('❌ Lỗi: AI Assistant chưa sẵn sàng.');
+                return;
+            }
+            
+            try {
                 if (window.aiAssistant.isListening) {
                     window.aiAssistant.stopListening();
+                    console.log('✅ Voice stopped');
                 } else {
                     window.aiAssistant.startListening();
+                    console.log('✅ Voice started');
                 }
+            } catch (error) {
+                console.error('❌ Error toggling voice:', error);
+                alert('❌ Lỗi khi bật/tắt giọng nói: ' + error.message);
             }
         }
         
         function toggleAutoMode() {
-            if (window.aiAssistant) {
+            console.log('🤖 toggleAutoMode() called');
+            
+            if (!window.aiAssistant) {
+                console.error('❌ AIAssistant not initialized!');
+                return;
+            }
+            
+            try {
                 window.aiAssistant.toggleAutoMode();
+                console.log('✅ Auto mode toggled:', window.aiAssistant.autoMode.enabled);
+            } catch (error) {
+                console.error('❌ Error toggling auto mode:', error);
             }
         }
         
