@@ -8,13 +8,21 @@ class AIAssistant {
         this.conversationHistory = [];
         this.isListening = false;
         this.recognition = null;
+        this.isInitialized = false;
+        
+        // Buffer để xử lý real-time data
+        this.emotionBuffer = [];
+        this.bufferSize = 5; // Phân tích mỗi 5 emotions
+        this.lastProcessTime = 0;
+        this.processInterval = 3000; // Xử lý mỗi 3 giây
         
         // Trạng thái tự động
         this.autoMode = {
-            enabled: false,
+            enabled: true, // Bật mặc định
             alerts: true,
             suggestions: true,
-            reports: true
+            reports: true,
+            voiceAlerts: false
         };
         
         // Ngưỡng cảnh báo
@@ -39,153 +47,206 @@ class AIAssistant {
     init() {
         this.setupVoiceRecognition();
         this.setupChatUI();
-        this.startAutoMonitoring();
         this.loadSettings();
-    }
-    
-    // ============================================
-    // GIÁM SÁT TỰ ĐỘNG - CORE FEATURE
-    // ============================================
-    
-    startAutoMonitoring() {
-        // Kiểm tra mỗi 5 giây
-        setInterval(() => {
-            if (!this.autoMode.enabled) return;
+        
+        // Đợi 1 giây để đảm bảo DOM đã sẵn sàng
+        setTimeout(() => {
+            this.isInitialized = true;
+            console.log('✅ AI Assistant initialized and ready!');
             
-            this.checkHealthAlerts();
-            this.checkProductivityPatterns();
-            this.checkPresence();
-            this.provideSmartSuggestions();
-        }, 5000);
+            // Hiển thị thông báo chào mừng
+            if (this.autoMode.enabled) {
+                this.showWelcomeMessage();
+            }
+        }, 1000);
     }
     
-    checkHealthAlerts() {
-        const recentEmotions = this.tracker.emotionHistory.slice(-10);
-        if (recentEmotions.length < 5) return;
+    showWelcomeMessage() {
+        this.addMessageToChat('bot', 
+            '👋 Xin chào! Tôi là AI Assistant.\n\n' +
+            '✅ Chế độ tự động đã BẬT\n' +
+            '✅ Tôi sẽ theo dõi và cảnh báo tự động\n\n' +
+            'Bạn có thể:\n' +
+            '• Hỏi "Báo cáo năng suất"\n' +
+            '• Nói "Bắt đầu Pomodoro"\n' +
+            '• Chat bất cứ lúc nào!'
+        );
+    }
+    
+    // ============================================
+    // REAL-TIME EMOTION PROCESSING - OPTIMIZED
+    // ============================================
+    
+    processEmotionData(emotion, confidence, faceDetected) {
+        if (!this.isInitialized || !this.autoMode.enabled) return;
         
-        // Đếm cảm xúc tiêu cực liên tiếp
-        const stressEmotions = ['angry', 'disgusted', 'fearful'];
-        const tiredEmotions = ['sad', 'fearful'];
+        const now = Date.now();
         
-        let consecutiveStress = 0;
-        let consecutiveTired = 0;
-        
-        recentEmotions.slice(-5).forEach(item => {
-            if (stressEmotions.includes(item.emotion)) {
-                consecutiveStress++;
-            }
-            if (tiredEmotions.includes(item.emotion)) {
-                consecutiveTired++;
-            }
+        // Thêm vào buffer
+        this.emotionBuffer.push({
+            emotion,
+            confidence,
+            faceDetected,
+            timestamp: now
         });
         
-        // Cảnh báo căng thẳng
-        if (consecutiveStress >= this.thresholds.stressLevel) {
+        // Giữ buffer size
+        if (this.emotionBuffer.length > this.bufferSize * 2) {
+            this.emotionBuffer.shift();
+        }
+        
+        // Xử lý theo interval để tránh lag
+        if (now - this.lastProcessTime >= this.processInterval) {
+            this.analyzeEmotionBuffer();
+            this.lastProcessTime = now;
+        }
+        
+        // Xử lý no face ngay lập tức
+        if (!faceDetected) {
+            this.handleNoFaceDetected();
+        } else {
+            this.alertCounters.noFace = 0; // Reset counter
+        }
+    }
+    
+    analyzeEmotionBuffer() {
+        if (this.emotionBuffer.length < this.bufferSize) return;
+        
+        const recentEmotions = this.emotionBuffer.slice(-this.bufferSize);
+        
+        // Phân tích patterns
+        this.detectStressPattern(recentEmotions);
+        this.detectTirednessPattern(recentEmotions);
+        this.checkFocusLevel();
+        this.provideContextualSuggestions();
+    }
+    
+    detectStressPattern(emotions) {
+        const stressEmotions = ['angry', 'disgusted', 'fearful'];
+        const stressCount = emotions.filter(e => 
+            e.faceDetected && stressEmotions.includes(e.emotion)
+        ).length;
+        
+        if (stressCount >= this.thresholds.stressLevel) {
             this.alertCounters.stress++;
+            
             if (this.alertCounters.stress >= 2) {
                 this.sendAlert('stress', 
-                    '⚠️ Cảnh Báo Căng Thẳng', 
-                    'Bạn đang căng thẳng kéo dài! Hãy nghỉ ngơi ngay.',
+                    '🚨 Cảnh Báo Căng Thẳng', 
+                    `Bạn đang căng thẳng (${stressCount}/${this.bufferSize} lần gần đây).\n\nHãy:\n• Thở sâu 5 lần\n• Đứng dậy vận động\n• Nghỉ ngơi 10 phút`,
                     'high'
                 );
                 this.alertCounters.stress = 0;
             }
+        } else {
+            this.alertCounters.stress = 0;
         }
+    }
+    
+    detectTirednessPattern(emotions) {
+        const tiredEmotions = ['sad', 'fearful'];
+        const tiredCount = emotions.filter(e => 
+            e.faceDetected && tiredEmotions.includes(e.emotion)
+        ).length;
         
-        // Cảnh báo mệt mỏi
-        if (consecutiveTired >= this.thresholds.tirednessLevel) {
+        if (tiredCount >= this.thresholds.tirednessLevel - 2) { // Nhạy hơn
             this.alertCounters.tiredness++;
+            
             if (this.alertCounters.tiredness >= 2) {
                 this.sendAlert('tired',
                     '😴 Cảnh Báo Mệt Mỏi',
-                    'Bạn có vẻ rất mệt. Đề xuất: Nghỉ ngơi 15 phút hoặc đi dạo.',
+                    `Bạn có vẻ rất mệt (${tiredCount}/${this.bufferSize} lần).\n\nGợi ý:\n• Nghỉ ngơi 15-20 phút\n• Ngủ trưa nếu có thể\n• Uống nước, ăn nhẹ`,
                     'medium'
                 );
                 this.alertCounters.tiredness = 0;
             }
-        }
-        
-        // Cảnh báo điểm tập trung thấp
-        if (this.tracker.focusScore < this.thresholds.focusDropLevel) {
-            this.sendAlert('focus',
-                '🎯 Mất Tập Trung',
-                `Điểm tập trung của bạn chỉ còn ${Math.round(this.tracker.focusScore)}/100. Hãy làm bài tập thở sâu!`,
-                'medium'
-            );
+        } else {
+            this.alertCounters.tiredness = 0;
         }
     }
     
-    checkPresence() {
-        const recentHistory = this.tracker.emotionHistory.slice(-10);
+    checkFocusLevel() {
+        if (!this.tracker) return;
         
-        // Kiểm tra không phát hiện khuôn mặt
-        const noFaceCount = recentHistory.filter(item => 
-            item.confidence === 0 || !item.emotion
-        ).length;
+        const focusScore = this.tracker.focusScore;
         
-        if (noFaceCount >= this.thresholds.noFaceDetected) {
-            this.alertCounters.noFace++;
-            if (this.alertCounters.noFace >= 2) {
-                this.sendAlert('absence',
-                    '👤 Phát Hiện Vắng Mặt',
-                    'Bạn không có mặt trước camera. Đang ghi nhận thời gian vắng mặt.',
-                    'high'
+        if (focusScore < this.thresholds.focusDropLevel) {
+            const now = Date.now();
+            
+            // Cảnh báo mỗi 5 phút
+            if (!this.lastFocusAlert || now - this.lastFocusAlert > 300000) {
+                this.sendAlert('focus',
+                    '🎯 Mất Tập Trung',
+                    `Điểm tập trung: ${Math.round(focusScore)}/100\n\nThử:\n• Bật nhạc tập trung\n• Kỹ thuật Pomodoro\n• Loại bỏ phiền nhiễu`,
+                    'medium'
                 );
-                
-                // Ghi nhận vắng mặt
-                this.tracker.recordAbsence(Date.now());
-                this.alertCounters.noFace = 0;
+                this.lastFocusAlert = now;
             }
-        } else {
+        }
+    }
+    
+    handleNoFaceDetected() {
+        this.alertCounters.noFace++;
+        
+        if (this.alertCounters.noFace >= this.thresholds.noFaceDetected) {
+            this.sendAlert('absence',
+                '👤 Phát Hiện Vắng Mặt',
+                `Không thấy bạn trước camera (${this.alertCounters.noFace} giây).\n\n⚠️ Đang ghi nhận thời gian vắng mặt.`,
+                'high'
+            );
+            
+            // Ghi nhận vắng mặt
+            if (this.tracker) {
+                this.tracker.recordAbsence(Date.now());
+            }
+            
+            // Reset để tránh spam
             this.alertCounters.noFace = 0;
         }
     }
     
-    checkProductivityPatterns() {
-        // Phân tích xu hướng năng suất
-        const history = this.tracker.emotionHistory;
-        if (history.length < 20) return;
-        
-        const last20 = history.slice(-20);
-        const avgFocus = last20.reduce((sum, item) => sum + item.focusScore, 0) / 20;
-        
-        // Nếu năng suất giảm liên tục
-        if (avgFocus < 50 && Date.now() - this.alertCounters.lastAlert > 300000) { // 5 phút
-            this.sendSuggestion(
-                '💡 Gợi Ý Tăng Năng Suất',
-                'Năng suất đang giảm. Tôi đề xuất:\n' +
-                '1. Nghỉ ngơi 5-10 phút\n' +
-                '2. Uống nước, ăn nhẹ\n' +
-                '3. Bật nhạc tập trung\n' +
-                '4. Thay đổi tư thế ngồi'
-            );
-            this.alertCounters.lastAlert = Date.now();
-        }
-    }
-    
-    provideSmartSuggestions() {
+    provideContextualSuggestions() {
         if (!this.autoMode.suggestions) return;
         
         const now = new Date();
         const hour = now.getHours();
+        const minute = now.getMinutes();
         
-        // Gợi ý theo thời gian
-        if (hour >= 12 && hour <= 13 && !this.tracker.lunchBreakTaken) {
-            this.sendSuggestion('🍽️ Giờ Ăn Trưa', 'Đã đến giờ ăn trưa! Hãy nghỉ ngơi và nạp năng lượng.');
-            this.tracker.lunchBreakTaken = true;
+        // Gợi ý theo thời gian (chỉ 1 lần/ngày)
+        const todayKey = now.toDateString();
+        
+        if (!this.suggestionCache) {
+            this.suggestionCache = {};
         }
         
-        if (hour >= 22 && !this.tracker.nightWarning) {
-            this.sendSuggestion('🌙 Làm Việc Muộn', 'Đã muộn rồi! Làm việc khuya ảnh hưởng sức khỏe. Hãy nghỉ ngơi.');
-            this.tracker.nightWarning = true;
+        // Giờ ăn trưa
+        if (hour === 12 && minute < 30 && !this.suggestionCache[`lunch_${todayKey}`]) {
+            this.sendSuggestion('🍽️ Giờ Ăn Trưa', 
+                'Đã 12h rồi! Hãy nghỉ ngơi và ăn trưa để nạp năng lượng nhé!'
+            );
+            this.suggestionCache[`lunch_${todayKey}`] = true;
+        }
+        
+        // Làm việc muộn
+        if (hour >= 22 && !this.suggestionCache[`night_${todayKey}`]) {
+            this.sendSuggestion('🌙 Làm Việc Muộn', 
+                'Đã 10h đêm rồi! Làm việc khuya ảnh hưởng sức khỏe.\nHãy nghỉ ngơi sớm để ngày mai làm việc tốt hơn!'
+            );
+            this.suggestionCache[`night_${todayKey}`] = true;
         }
     }
+    
+    // ============================================
+    // GIÁM SÁT TỰ ĐỘNG - REMOVED (Moved to processEmotionData)
+    // ============================================
     
     // ============================================
     // HỆ THỐNG CẢNH BÁO
     // ============================================
     
     sendAlert(type, title, message, priority = 'medium') {
+        if (!this.autoMode.alerts) return;
+        
         // Hiển thị UI alert
         this.showAlert(title, message, priority);
         
@@ -196,44 +257,52 @@ class AIAssistant {
         this.sendBrowserNotification(title, message);
         
         // Voice alert (nếu bật)
-        if (this.autoMode.voiceAlerts) {
-            this.speak(message);
+        if (this.autoMode.voiceAlerts && priority === 'high') {
+            this.speak(message.split('\n')[0]); // Chỉ đọc dòng đầu
         }
         
         // Ghi log
         this.logAlert(type, title, message, priority);
+        
+        console.log(`🔔 Alert [${type}/${priority}]:`, title);
     }
     
     sendSuggestion(title, message) {
+        if (!this.autoMode.suggestions) return;
         this.showSuggestion(title, message);
     }
     
     showAlert(title, message, priority) {
         const alertBox = document.createElement('div');
-        alertBox.className = `ai-alert ai-alert-${priority}`;
+        alertBox.className = `ai-alert ai-alert-${priority} fade-in`;
         alertBox.innerHTML = `
             <div class="alert-header">
                 <span class="alert-icon">${this.getAlertIcon(priority)}</span>
                 <span class="alert-title">${title}</span>
                 <button class="alert-close" onclick="this.parentElement.parentElement.remove()">✕</button>
             </div>
-            <div class="alert-message">${message}</div>
-            <div class="alert-actions">
-                <button onclick="aiAssistant.dismissAlert(this)" class="btn-dismiss">Đã hiểu</button>
-                <button onclick="aiAssistant.takeBreak()" class="btn-action">Nghỉ ngơi ngay</button>
+            <div class="alert-message">${message.replace(/\n/g, '<br>')}</div>
+            <div class="alert-footer">
+                <small>${new Date().toLocaleTimeString('vi-VN')}</small>
             </div>
         `;
         
         const container = document.getElementById('alertContainer') || this.createAlertContainer();
         container.appendChild(alertBox);
         
-        // Auto remove sau 15 giây
+        // Giới hạn số alert (max 3)
+        const alerts = container.querySelectorAll('.ai-alert');
+        if (alerts.length > 3) {
+            alerts[0].remove();
+        }
+        
+        // Auto remove sau 30 giây với animation
         setTimeout(() => {
             if (alertBox.parentElement) {
-                alertBox.style.animation = 'slideOutRight 0.3s ease-out';
-                setTimeout(() => alertBox.remove(), 300);
+                alertBox.classList.add('fade-out');
+                setTimeout(() => alertBox.remove(), 500);
             }
-        }, 15000);
+        }, 30000);
     }
     
     showSuggestion(title, message) {

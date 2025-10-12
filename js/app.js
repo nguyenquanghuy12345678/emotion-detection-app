@@ -180,24 +180,19 @@ class EmotionDetectionApp {
                     const confidence = expressions[dominantEmotion];
                     
                     if (confidence > CONFIG.MIN_CONFIDENCE) {
+                        // Cập nhật hiển thị cảm xúc
                         this.emotionHandler.updateEmotionDisplay(dominantEmotion, confidence);
                         
-                        // ===== TÍCH HỢP PRODUCTIVITY TRACKER =====
-                        // Gửi dữ liệu cảm xúc đến productivity tracker
-                        if (window.productivityTracker) {
-                            const workState = window.productivityTracker.analyzeWorkState(dominantEmotion, confidence);
-                            // Cập nhật thống kê
-                            window.productivityTracker.updateStatsDisplay();
-                            window.productivityTracker.updatePomodoroDisplay();
-                            window.productivityTracker.updateNotesDisplay();
-                        }
+                        // ===== TÍCH HỢP ĐỒNG BỘ VỚI AI SYSTEM =====
+                        this.syncWithAISystem(dominantEmotion, confidence, true);
                     }
                 }
 
                 // Update FPS counter
                 this.fpsCounter++;
             } else {
-                // No face detected
+                // No face detected - Gửi tín hiệu không phát hiện khuôn mặt
+                this.syncWithAISystem('none', 0, false);
                 this.emotionHandler.updateEmotionDisplay('neutral', 0);
             }
 
@@ -234,11 +229,51 @@ class EmotionDetectionApp {
             this.lastFpsUpdate = now;
         }, 1000);
     }
+    
+    // ============================================
+    // ĐỒNG BỘ VỚI AI SYSTEM - REAL-TIME
+    // ============================================
+    syncWithAISystem(emotion, confidence, faceDetected) {
+        // Đồng bộ với Productivity Tracker
+        if (window.productivityTracker) {
+            try {
+                if (faceDetected) {
+                    // Phân tích và cập nhật trạng thái làm việc
+                    window.productivityTracker.analyzeWorkState(emotion, confidence);
+                } else {
+                    // Ghi nhận không phát hiện khuôn mặt
+                    window.productivityTracker.recordNoFaceDetected();
+                }
+                
+                // Cập nhật UI (throttled để tránh lag)
+                if (!this.lastUIUpdate || Date.now() - this.lastUIUpdate > 1000) {
+                    window.productivityTracker.updateStatsDisplay();
+                    window.productivityTracker.updatePomodoroDisplay();
+                    this.lastUIUpdate = Date.now();
+                }
+            } catch (error) {
+                console.error('Error syncing with Productivity Tracker:', error);
+            }
+        }
+        
+        // Đồng bộ với AI Assistant
+        if (window.aiAssistant && window.aiAssistant.autoMode.enabled) {
+            try {
+                // AI Assistant sẽ tự động phân tích và cảnh báo
+                window.aiAssistant.processEmotionData(emotion, confidence, faceDetected);
+            } catch (error) {
+                console.error('Error syncing with AI Assistant:', error);
+            }
+        }
+    }
 }
 
 // ============================================
 // START APPLICATION
 // ============================================
+let emotionApp = null;
+
 document.addEventListener('DOMContentLoaded', () => {
-    new EmotionDetectionApp();
+    emotionApp = new EmotionDetectionApp();
+    window.emotionApp = emotionApp; // Expose globally
 });

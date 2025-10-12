@@ -11,6 +11,12 @@ class ProductivityTracker {
         this.focusScore = 100;
         this.breakSuggested = false;
         
+        // Tracking real-time
+        this.lastEmotionUpdate = Date.now();
+        this.noFaceDetectedCount = 0;
+        this.sessionStartTime = null;
+        this.isActive = false;
+        
         // Pomodoro Timer
         this.pomodoroTime = 25 * 60; // 25 phút
         this.breakTime = 5 * 60; // 5 phút
@@ -20,14 +26,16 @@ class ProductivityTracker {
         this.currentTime = 0;
         this.isWorkTime = true;
         
-        // Thống kê
+        // Thống kê real-time
         this.stats = {
             totalWorkTime: 0,
             totalBreakTime: 0,
             focusedTime: 0,
             distractedTime: 0,
             stressTime: 0,
-            happyTime: 0
+            happyTime: 0,
+            sessionStartTime: 0,
+            currentSessionTime: 0
         };
         
         // Ghi chú công việc
@@ -45,21 +53,75 @@ class ProductivityTracker {
         this.loadData();
         this.setupUI();
         this.updateStatsDisplay();
+        this.startSessionTracking();
     }
     
     // ============================================
-    // PHÂN TÍCH CẢM XÚC CHO CÔNG VIỆC
+    // SESSION TRACKING - REAL-TIME
+    // ============================================
+    
+    startSessionTracking() {
+        // Cập nhật thời gian làm việc mỗi giây
+        setInterval(() => {
+            if (this.isActive && this.sessionStartTime) {
+                const now = Date.now();
+                const sessionDuration = Math.floor((now - this.sessionStartTime) / 1000);
+                this.stats.currentSessionTime = sessionDuration;
+                
+                // Cập nhật UI mỗi 5 giây để tránh lag
+                if (sessionDuration % 5 === 0) {
+                    this.updateStatsDisplay();
+                }
+            }
+        }, 1000);
+    }
+    
+    startSession() {
+        if (!this.isActive) {
+            this.isActive = true;
+            this.sessionStartTime = Date.now();
+            this.stats.sessionStartTime = this.sessionStartTime;
+            console.log('✅ Productivity session started');
+        }
+    }
+    
+    endSession() {
+        if (this.isActive) {
+            this.isActive = false;
+            const sessionDuration = Math.floor((Date.now() - this.sessionStartTime) / 1000);
+            this.stats.totalWorkTime += sessionDuration;
+            this.sessionStartTime = null;
+            this.stats.currentSessionTime = 0;
+            this.saveData();
+            console.log('⏹️ Productivity session ended');
+        }
+    }
+    
+    // ============================================
+    // PHÂN TÍCH CẢM XÚC CHO CÔNG VIỆC - OPTIMIZED
     // ============================================
     
     analyzeWorkState(emotion, confidence) {
         const timestamp = Date.now();
+        
+        // Bắt đầu session nếu chưa active
+        if (!this.isActive) {
+            this.startSession();
+        }
+        
+        // Reset no face counter
+        this.noFaceDetectedCount = 0;
+        this.lastEmotionUpdate = timestamp;
+        
+        // Tính điểm tập trung cho cảm xúc này
+        const emotionFocusScore = this.calculateFocusScore(emotion);
         
         // Thêm vào lịch sử
         this.emotionHistory.push({
             emotion,
             confidence,
             timestamp,
-            focusScore: this.calculateFocusScore(emotion)
+            focusScore: emotionFocusScore
         });
         
         // Giữ lịch sử 100 mục gần nhất
@@ -67,20 +129,62 @@ class ProductivityTracker {
             this.emotionHistory.shift();
         }
         
-        // Cập nhật điểm tập trung
+        // Cập nhật điểm tập trung (smooth transition)
         this.updateFocusScore(emotion);
+        
+        // Cập nhật thống kê theo cảm xúc
+        this.updateEmotionStats(emotion, timestamp);
         
         // Phân tích trạng thái
         const workState = this.getWorkState(emotion);
         this.updateWorkState(workState);
         
-        // Kiểm tra cần nghỉ ngơi
-        this.checkBreakNeeded();
+        // Kiểm tra cần nghỉ ngơi (throttled - mỗi 10 giây)
+        if (!this.lastBreakCheck || timestamp - this.lastBreakCheck > 10000) {
+            this.checkBreakNeeded();
+            this.lastBreakCheck = timestamp;
+        }
         
-        // Lưu dữ liệu
-        this.saveData();
+        // Lưu dữ liệu (throttled - mỗi 30 giây)
+        if (!this.lastSave || timestamp - this.lastSave > 30000) {
+            this.saveData();
+            this.lastSave = timestamp;
+        }
         
         return workState;
+    }
+    
+    recordNoFaceDetected() {
+        this.noFaceDetectedCount++;
+        
+        // Nếu không phát hiện khuôn mặt quá lâu (30 giây)
+        if (this.noFaceDetectedCount > 30) {
+            // Tạm dừng session
+            if (this.isActive) {
+                console.warn('⚠️ No face detected for 30s - Pausing session');
+                this.endSession();
+            }
+        }
+    }
+    
+    updateEmotionStats(emotion, timestamp) {
+        // Cập nhật thời gian cho từng loại cảm xúc
+        const focusEmotions = ['neutral', 'happy'];
+        const stressEmotions = ['angry', 'disgusted', 'fearful'];
+        
+        if (focusEmotions.includes(emotion)) {
+            this.stats.focusedTime++;
+        } else {
+            this.stats.distractedTime++;
+        }
+        
+        if (stressEmotions.includes(emotion)) {
+            this.stats.stressTime++;
+        }
+        
+        if (emotion === 'happy') {
+            this.stats.happyTime++;
+        }
     }
     
     calculateFocusScore(emotion) {
@@ -356,14 +460,22 @@ class ProductivityTracker {
         const statsContainer = document.getElementById('productivityStats');
         if (!statsContainer) return;
         
-        const totalTime = this.stats.totalWorkTime + this.stats.totalBreakTime;
+        // Tính toán thời gian
+        const totalTime = this.stats.totalWorkTime + this.stats.currentSessionTime;
+        const focusedTime = this.stats.focusedTime;
         const focusRate = totalTime > 0 
-            ? ((this.stats.focusedTime / totalTime) * 100).toFixed(1) 
+            ? ((focusedTime / totalTime) * 100).toFixed(1) 
             : 0;
         
+        // Tính thời gian session hiện tại
+        const currentSessionDisplay = this.stats.currentSessionTime > 0
+            ? `<div class="current-session">📍 Phiên hiện tại: ${this.formatTime(this.stats.currentSessionTime)}</div>`
+            : '';
+        
         statsContainer.innerHTML = `
+            ${currentSessionDisplay}
             <div class="stats-grid">
-                <div class="stat-card">
+                <div class="stat-card ${this.isActive ? 'active-session' : ''}">
                     <div class="stat-icon">⏱️</div>
                     <div class="stat-label">Tổng thời gian</div>
                     <div class="stat-value">${this.formatTime(totalTime)}</div>
@@ -371,7 +483,7 @@ class ProductivityTracker {
                 <div class="stat-card">
                     <div class="stat-icon">🎯</div>
                     <div class="stat-label">Thời gian tập trung</div>
-                    <div class="stat-value">${this.formatTime(this.stats.focusedTime)}</div>
+                    <div class="stat-value">${this.formatTime(focusedTime)}</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon">📊</div>
