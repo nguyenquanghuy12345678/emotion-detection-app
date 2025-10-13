@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Trợ Lý Công Việc - Enhanced Edition</title>
+    
+    <!-- Meta tags for better performance -->
+    <meta name="description" content="Ứng dụng AI nhận diện cảm xúc và hỗ trợ năng suất công việc">
+    <meta name="robots" content="noindex, nofollow">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    
+    <!-- Preload critical resources -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="dns-prefetch" href="https://unpkg.com">
+    
+    <!-- Face-api.js Library - Enhanced loading with fallback -->
+    <script>
+        // Enhanced face-api loading with fallback
+        (function() {
+            const scripts = [
+                'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.min.js',
+                'https://unpkg.com/@vladmandic/face-api@latest/dist/face-api.min.js'
+            ];
+            
+            let loaded = false;
+            let attempts = 0;
+            
+            function loadScript(url) {
+                return new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = url;
+                    script.defer = true;
+                    script.onload = () => {
+                        console.log('Face-API loaded from:', url);
+                        loaded = true;
+                        resolve();
+                    };
+                    script.onerror = () => {
+                        console.warn('Failed to load Face-API from:', url);
+                        reject();
+                    };
+                    document.head.appendChild(script);
+                });
+            }
+            
+            async function tryLoadFaceAPI() {
+                for (const url of scripts) {
+                    try {
+                        await loadScript(url);
+                        return;
+                    } catch (error) {
+                        continue;
+                    }
+                }
+                
+                // All attempts failed
+                console.error('Failed to load Face-API from all CDNs');
+                document.addEventListener('DOMContentLoaded', () => {
+                    const statusText = document.getElementById('statusText');
+                    if (statusText) {
+                        statusText.textContent = 'Không thể tải thư viện AI. Kiểm tra kết nối mạng và tải lại trang!';
+                    }
+                });
+            }
+            
+            tryLoadFaceAPI();
+        })();
+    </script>
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/productivity.css">
+    
+    <!-- Enhanced styles for better error handling -->
+    <style>
+        .system-info {
+            background: #f0f8ff;
+            border: 1px solid #b0d4ff;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        
+        .error-details {
+            background: #ffe6e6;
+            border: 1px solid #ffb3b3;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            color: #d63384;
+        }
+        
+        .camera-help {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            color: #856404;
+        }
+        
+        .camera-help ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        
+        .camera-help li {
+            margin: 5px 0;
+        }
+        
+        .restart-btn {
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px 5px;
+            animation: pulse 2s infinite;
+        }
+        
+        .restart-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .backend-info {
+            display: inline-block;
+            background: rgba(76, 175, 80, 0.1);
+            color: #4caf50;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        
+        .performance-monitor {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 11px;
+            z-index: 1000;
+            min-width: 120px;
+        }
+        
+        .troubleshooting {
+            background: #e8f4f8;
+            border: 1px solid #b3e0f2;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .troubleshooting h4 {
+            color: #0c5460;
+            margin-top: 0;
+        }
+        
+        .troubleshooting ol {
+            margin: 10px 0;
+            padding-left: 25px;
+        }
+        
+        .troubleshooting li {
+            margin: 8px 0;
+            line-height: 1.4;
+        }
+        
+        .feature-unavailable {
+            opacity: 0.6;
+            pointer-events: none;
+            background: #f8f9fa !important;
+            color: #6c757d !important;
+        }
+        
+        .feature-unavailable::after {
+            content: " (Không khả dụng)";
+            font-style: italic;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <!-- System Performance Monitor -->
+    <div id="performanceMonitor" class="performance-monitor">
+        <div id="fps">-- FPS</div>
+        <div id="backend">Backend: --</div>
+        <div id="memory">RAM: --</div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="tab-navigation">
+        <button class="tab-btn active" data-tab="emotion">🎭 Nhận Diện Cảm Xúc</button>
+        <button class="tab-btn" data-tab="productivity">💼 Hỗ Trợ Công Việc</button>
+        <button class="tab-btn" data-tab="analytics">📊 Thống Kê</button>
+        <button class="tab-btn" data-tab="assistant">🤖 AI Trợ Lý</button>
+        <button class="tab-btn" data-tab="database">💾 Database & API</button>
+    </div>
+
+    <!-- AI Chat Button (Floating) -->
+    <button id="chatToggle" class="chat-toggle" onclick="toggleChat()">
+        💬
+    </button>
+
+    <!-- AI Chat Panel -->
+    <div id="chatPanel" class="chat-panel">
+        <div class="chat-header">
+            <h3>🤖 AI Trợ Lý Thông Minh Pro</h3>
+            <button onclick="toggleChat()" class="chat-close">✕</button>
+        </div>
+        <div class="chat-messages" id="chatMessages">
+            <div class="chat-message chat-message-bot">
+                <div class="message-avatar">🤖</div>
+                <div class="message-content">
+                    <div class="message-text">
+                        Xin chào! Tôi là AI Assistant Pro - phiên bản nâng cao! 🚀<br><br>
+                        ✅ Nhận diện cảm xúc với AI tiên tiến<br>
+                        ✅ Theo dõi năng suất thông minh<br>
+                        ✅ Hỗ trợ database & API miễn phí<br>
+                        ✅ Thống kê chi tiết & báo cáo<br>
+                        ✅ Tối ưu hóa hiệu suất làm việc<br>
+                        ✅ Phát hiện stress & đề xuất giải pháp<br><br>
+                        Hãy hỏi tôi bất cứ điều gì! 💪
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="chat-input-container">
+            <input type="text" id="chatInput" placeholder="Hỏi AI Assistant..." maxlength="500">
+            <button id="chatSend" onclick="sendMessage()">📤</button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+        <h1>🤖 AI Trợ Lý Công Việc - Enhanced Edition</h1>
+        
+        <!-- System Check Results -->
+        <div id="systemCheck" class="system-info" style="display: none;">
+            <h4>🔧 Thông tin hệ thống:</h4>
+            <div id="systemDetails"></div>
+        </div>
+
+        <!-- Emotion Detection Tab -->
+        <div id="emotionTab" class="tab-content active">
+            <div class="controls">
+                <button id="startBtn" class="btn btn-primary" disabled>
+                    🎥 Bắt Đầu Phân Tích
+                </button>
+                <button id="stopBtn" class="btn btn-secondary" disabled>
+                    ⏹️ Dừng Lại
+                </button>
+                <button id="systemCheckBtn" class="btn btn-info" onclick="runSystemCheck()">
+                    🔍 Kiểm Tra Hệ Thống
+                </button>
+            </div>
+
+            <div class="status" id="status">
+                <div id="statusText">Đang khởi tạo AI Assistant Pro...</div>
+            </div>
+
+            <div class="video-container">
+                <video id="video" autoplay muted playsinline></video>
+                <canvas id="overlay"></canvas>
+                
+                <!-- Enhanced emotion display -->
+                <div class="emotion-display" id="emotionDisplay">
+                    <div class="emotion-main">
+                        <div class="emotion-emoji" id="emotionEmoji">🎭</div>
+                        <div class="emotion-info">
+                            <div class="emotion-label" id="emotionLabel">Chờ phân tích...</div>
+                            <div class="emotion-confidence" id="emotionConfidence"></div>
+                        </div>
+                    </div>
+                    <div class="emotion-message" id="emotionMessage">
+                        Hướng camera về mặt bạn để bắt đầu phân tích cảm xúc!
+                    </div>
+                    <div class="productivity-suggestion" id="productivitySuggestion"></div>
+                </div>
+            </div>
+
+            <!-- Troubleshooting Guide -->
+            <div id="troubleshooting" class="troubleshooting" style="display: none;">
+                <h4>🔧 Hướng dẫn khắc phục sự cố:</h4>
+                <ol>
+                    <li><strong>Lỗi WebGL:</strong> Cập nhật driver card đồ họa hoặc sử dụng trình duyệt Chrome/Firefox mới nhất</li>
+                    <li><strong>Lỗi Camera:</strong> Cấp quyền truy cập camera trong cài đặt trình duyệt</li>
+                    <li><strong>Lỗi WASM:</strong> Đảm bảo kết nối internet ổn định, thử đổi DNS về 8.8.8.8</li>
+                    <li><strong>Tải mô hình chậm:</strong> Sử dụng mạng wifi thay vì 4G, hoặc VPN nếu cần</li>
+                    <li><strong>Hiệu suất chậm:</strong> Đóng các tab/ứng dụng khác, giảm chất lượng video</li>
+                </ol>
+                <button class="restart-btn" onclick="window.location.reload()">🔄 Tải Lại Trang</button>
+            </div>
+        </div>
+
+        <!-- Productivity Tab -->
+        <div id="productivityTab" class="tab-content">
+            <div class="productivity-dashboard">
+                <h2>💼 Hỗ Trợ Công Việc Thông Minh</h2>
+                
+                <!-- Pomodoro Timer -->
+                <div class="productivity-card">
+                    <h3>🍅 Pomodoro Timer</h3>
+                    <div class="timer-display" id="pomodoroTimer">25:00</div>
+                    <div class="timer-controls">
+                        <button id="startPomodoro" class="btn btn-success">▶️ Bắt Đầu</button>
+                        <button id="pausePomodoro" class="btn btn-warning">⏸️ Tạm Dừng</button>
+                        <button id="resetPomodoro" class="btn btn-secondary">🔄 Reset</button>
+                    </div>
+                    <div class="timer-status" id="pomodoroStatus">Sẵn sàng làm việc!</div>
+                </div>
+
+                <!-- Work Analytics -->
+                <div class="productivity-card">
+                    <h3>📈 Phân Tích Năng Suất</h3>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-value" id="workTime">0h 0m</div>
+                            <div class="stat-label">Thời gian làm việc</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="breakTime">0h 0m</div>
+                            <div class="stat-label">Thời gian nghỉ</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="productivityScore">85%</div>
+                            <div class="stat-label">Điểm năng suất</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="focusLevel">Cao</div>
+                            <div class="stat-label">Mức độ tập trung</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Emotion-based Recommendations -->
+                <div class="productivity-card">
+                    <h3>🎯 Đề Xuất Thông Minh</h3>
+                    <div id="smartRecommendations">
+                        <p>Hãy bắt đầu phân tích cảm xúc để nhận đề xuất cá nhân hóa!</p>
+                    </div>
+                </div>
+
+                <!-- Task Manager -->
+                <div class="productivity-card">
+                    <h3>✅ Quản Lý Nhiệm Vụ</h3>
+                    <div class="task-input">
+                        <input type="text" id="taskInput" placeholder="Thêm nhiệm vụ mới...">
+                        <button id="addTask" class="btn btn-primary">➕ Thêm</button>
+                    </div>
+                    <div id="taskList" class="task-list">
+                        <!-- Tasks will be added here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Tab -->
+        <div id="analyticsTab" class="tab-content">
+            <div class="analytics-dashboard">
+                <h2>📊 Thống Kê & Báo Cáo</h2>
+                
+                <!-- Emotion Analytics -->
+                <div class="analytics-card">
+                    <h3>😊 Phân Tích Cảm Xúc</h3>
+                    <canvas id="emotionChart" width="400" height="200"></canvas>
+                    <div class="emotion-stats" id="emotionStats">
+                        <div class="stat">😄 Vui vẻ: <span>0%</span></div>
+                        <div class="stat">😢 Buồn: <span>0%</span></div>
+                        <div class="stat">😡 Tức giận: <span>0%</span></div>
+                        <div class="stat">😲 Ngạc nhiên: <span>0%</span></div>
+                        <div class="stat">😐 Bình thường: <span>0%</span></div>
+                    </div>
+                </div>
+
+                <!-- Productivity Trends -->
+                <div class="analytics-card">
+                    <h3>📈 Xu Hướng Năng Suất</h3>
+                    <canvas id="productivityChart" width="400" height="200"></canvas>
+                </div>
+
+                <!-- Daily Report -->
+                <div class="analytics-card">
+                    <h3>📋 Báo Cáo Hôm Nay</h3>
+                    <div id="dailyReport">
+                        <p>Chưa có dữ liệu để tạo báo cáo. Hãy sử dụng ứng dụng trong ít nhất 10 phút!</p>
+                    </div>
+                    <button id="exportReport" class="btn btn-success">📥 Xuất Báo Cáo</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Assistant Tab -->
+        <div id="assistantTab" class="tab-content">
+            <div class="assistant-dashboard">
+                <h2>🤖 AI Trợ Lý Thông Minh</h2>
+                
+                <!-- AI Capabilities -->
+                <div class="assistant-card">
+                    <h3>🚀 Khả Năng AI</h3>
+                    <div class="capabilities-grid">
+                        <div class="capability-item">
+                            <div class="capability-icon">🎭</div>
+                            <div class="capability-text">Nhận diện cảm xúc real-time</div>
+                        </div>
+                        <div class="capability-item">
+                            <div class="capability-icon">📊</div>
+                            <div class="capability-text">Phân tích năng suất làm việc</div>
+                        </div>
+                        <div class="capability-item">
+                            <div class="capability-icon">💡</div>
+                            <div class="capability-text">Đề xuất tối ưu hóa thông minh</div>
+                        </div>
+                        <div class="capability-item">
+                            <div class="capability-icon">🧘</div>
+                            <div class="capability-text">Phát hiện stress & mệt mỏi</div>
+                        </div>
+                        <div class="capability-item">
+                            <div class="capability-icon">⏰</div>
+                            <div class="capability-text">Quản lý thời gian Pomodoro</div>
+                        </div>
+                        <div class="capability-item">
+                            <div class="capability-icon">📈</div>
+                            <div class="capability-text">Báo cáo chi tiết & thống kê</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="assistant-card">
+                    <h3>⚡ Thao Tác Nhanh</h3>
+                    <div class="quick-actions">
+                        <button class="action-btn" onclick="askAI('Phân tích tâm trạng hiện tại của tôi')">
+                            😊 Phân tích tâm trạng
+                        </button>
+                        <button class="action-btn" onclick="askAI('Đề xuất lịch làm việc hôm nay')">
+                            📅 Lên lịch làm việc
+                        </button>
+                        <button class="action-btn" onclick="askAI('Tôi cảm thấy mệt mỏi, làm gì bây giờ?')">
+                            😴 Hỗ trợ mệt mỏi
+                        </button>
+                        <button class="action-btn" onclick="askAI('Bài tập thở để giảm stress')">
+                            🧘 Thư giãn stress
+                        </button>
+                        <button class="action-btn" onclick="generateProductivityReport()">
+                            📊 Tạo báo cáo
+                        </button>
+                        <button class="action-btn" onclick="askAI('Tips tăng năng suất làm việc')">
+                            💪 Tips năng suất
+                        </button>
+                    </div>
+                </div>
+
+                <!-- AI Insights -->
+                <div class="assistant-card">
+                    <h3>🔮 AI Insights</h3>
+                    <div id="aiInsights">
+                        <p>Bắt đầu sử dụng ứng dụng để nhận insights từ AI!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Database & API Tab -->
+        <div id="databaseTab" class="tab-content">
+            <div class="database-dashboard">
+                <h2>💾 Database & API Miễn Phí</h2>
+                
+                <!-- Data Storage -->
+                <div class="database-card">
+                    <h3>🗄️ Lưu Trữ Dữ Liệu</h3>
+                    <div class="storage-info">
+                        <div class="storage-item">
+                            <strong>LocalStorage:</strong> <span id="localStorageSize">0 KB</span>
+                            <button onclick="clearLocalStorage()" class="btn btn-warning btn-sm">🗑️ Xóa</button>
+                        </div>
+                        <div class="storage-item">
+                            <strong>IndexedDB:</strong> <span id="indexedDBSize">0 KB</span>
+                            <button onclick="clearIndexedDB()" class="btn btn-warning btn-sm">🗑️ Xóa</button>
+                        </div>
+                        <div class="storage-item">
+                            <strong>Session Data:</strong> <span id="sessionSize">0 KB</span>
+                            <button onclick="clearSession()" class="btn btn-warning btn-sm">🗑️ Xóa</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Free APIs -->
+                <div class="database-card">
+                    <h3>🌐 API Miễn Phí Tích Hợp</h3>
+                    <div class="api-list">
+                        <div class="api-item">
+                            <strong>JSONPlaceholder:</strong> Test API cho dữ liệu mẫu
+                            <button onclick="testAPI('jsonplaceholder')" class="btn btn-primary btn-sm">🧪 Test</button>
+                        </div>
+                        <div class="api-item">
+                            <strong>OpenWeatherMap:</strong> Dữ liệu thời tiết (cần API key)
+                            <button onclick="testAPI('weather')" class="btn btn-primary btn-sm">🌤️ Test</button>
+                        </div>
+                        <div class="api-item">
+                            <strong>Quote API:</strong> Quotes động lực
+                            <button onclick="testAPI('quotes')" class="btn btn-primary btn-sm">💬 Test</button>
+                        </div>
+                        <div class="api-item">
+                            <strong>Cat Facts:</strong> Sự thật thú vị (giải trí)
+                            <button onclick="testAPI('catfacts')" class="btn btn-primary btn-sm">🐱 Test</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Data Export/Import -->
+                <div class="database-card">
+                    <h3>📤 Xuất/Nhập Dữ Liệu</h3>
+                    <div class="data-controls">
+                        <button onclick="exportAllData()" class="btn btn-success">📥 Xuất Tất Cả Dữ Liệu</button>
+                        <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(this)">
+                        <button onclick="document.getElementById('importFile').click()" class="btn btn-info">📤 Nhập Dữ Liệu</button>
+                        <button onclick="backupToCloud()" class="btn btn-primary">☁️ Backup Cloud</button>
+                    </div>
+                </div>
+
+                <!-- Real-time Sync -->
+                <div class="database-card">
+                    <h3>🔄 Đồng Bộ Real-time</h3>
+                    <div class="sync-controls">
+                        <div class="sync-status">
+                            <span>Trạng thái: </span>
+                            <span id="syncStatus" class="status-offline">Offline</span>
+                        </div>
+                        <button id="enableSync" onclick="toggleSync()" class="btn btn-primary">🔄 Bật Đồng Bộ</button>
+                        <button onclick="forcSync()" class="btn btn-warning">⚡ Đồng Bộ Ngay</button>
+                    </div>
+                    <div id="syncLog" class="sync-log">
+                        <p>Chưa có hoạt động đồng bộ</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced JavaScript Loading -->
+    <script>
+        // Check for critical features before loading main scripts
+        function checkSystemRequirements() {
+            const results = {
+                webgl: false,
+                getUserMedia: false,
+                wasm: false,
+                indexedDB: false,
+                localStorage: false
+            };
+            
+            // Check WebGL
+            try {
+                const canvas = document.createElement('canvas');
+                const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+                results.webgl = !!gl;
+            } catch (e) {}
+            
+            // Check getUserMedia
+            results.getUserMedia = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+            
+            // Check WebAssembly
+            results.wasm = typeof WebAssembly === 'object';
+            
+            // Check IndexedDB
+            results.indexedDB = 'indexedDB' in window;
+            
+            // Check localStorage
+            try {
+                localStorage.setItem('test', 'test');
+                localStorage.removeItem('test');
+                results.localStorage = true;
+            } catch (e) {}
+            
+            return results;
+        }
+        
+        // Display system check results
+        function runSystemCheck() {
+            const results = checkSystemRequirements();
+            const systemCheck = document.getElementById('systemCheck');
+            const systemDetails = document.getElementById('systemDetails');
+            
+            let html = '<div class="system-results">';
+            
+            Object.entries(results).forEach(([feature, supported]) => {
+                const icon = supported ? '✅' : '❌';
+                const status = supported ? 'Hỗ trợ' : 'Không hỗ trợ';
+                const featureNames = {
+                    webgl: 'WebGL (GPU acceleration)',
+                    getUserMedia: 'Camera API',
+                    wasm: 'WebAssembly',
+                    indexedDB: 'IndexedDB',
+                    localStorage: 'LocalStorage'
+                };
+                
+                html += `<div>${icon} <strong>${featureNames[feature]}:</strong> ${status}</div>`;
+            });
+            
+            html += '</div>';
+            
+            // Add browser info
+            html += '<br><strong>Thông tin trình duyệt:</strong><br>';
+            html += `User Agent: ${navigator.userAgent}<br>`;
+            html += `Platform: ${navigator.platform}<br>`;
+            html += `Language: ${navigator.language}`;
+            
+            systemDetails.innerHTML = html;
+            systemCheck.style.display = 'block';
+            
+            // Show troubleshooting if there are issues
+            if (!results.webgl || !results.getUserMedia) {
+                document.getElementById('troubleshooting').style.display = 'block';
+            }
+        }
+        
+        // Initialize system check on load
+        document.addEventListener('DOMContentLoaded', () => {
+            const requirements = checkSystemRequirements();
+            console.log('System Requirements Check:', requirements);
+            
+            // Show warnings for missing features
+            if (!requirements.webgl) {
+                console.warn('WebGL not supported - AI will use CPU backend');
+            }
+            if (!requirements.getUserMedia) {
+                console.error('Camera API not supported - App cannot function');
+            }
+        });
+    </script>
+    
+    <!-- Load enhanced configuration -->
+    <script src="js/config-enhanced.js"></script>
+    
+    <!-- Load enhanced modules -->
+    <script src="js/camera-enhanced.js"></script>
+    <script src="js/emotions.js"></script>
+    <script src="js/productivity.js"></script>
+    <script src="js/ai-assistant.js"></script>
+    
+    <!-- Load main application -->
+    <script src="js/app-fixed.js"></script>
+    
+    <!-- Enhanced error handling -->
+    <script>
+        // Global error handler
+        window.onerror = function(msg, url, line, col, error) {
+            console.error('Global Error:', { msg, url, line, col, error });
+            
+            // Show user-friendly error message
+            const statusText = document.getElementById('statusText');
+            if (statusText && !statusText.textContent.includes('Lỗi')) {
+                statusText.textContent = 'Đã xảy ra lỗi. Vui lòng tải lại trang!';
+            }
+            
+            return true;
+        };
+        
+        // Unhandled promise rejection handler
+        window.addEventListener('unhandledrejection', function(event) {
+            console.error('Unhandled Promise Rejection:', event.reason);
+            event.preventDefault();
+        });
+    </script>
+</body>
+</html>
