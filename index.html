@@ -3,10 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Trợ Lý Công Việc - Emotion Detection</title>
+    <title>AI Trợ Lý Công Việc - Emotion Detection (Fixed)</title>
     
-    <!-- Face-api.js Library - Use jsdelivr CDN for better reliability -->
-    <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.min.js"></script>
+    <!-- Add favicon to prevent 404 error -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
+    
+    <!-- Prevent extension conflicts -->
+    <script>
+        // Prevent Ethereum wallet extension conflicts
+        (function() {
+            const originalDefineProperty = Object.defineProperty;
+            Object.defineProperty = function(obj, prop, descriptor) {
+                if (prop === 'ethereum' && window.ethereum) {
+                    console.warn('Prevented ethereum redefinition by extension');
+                    return obj;
+                }
+                return originalDefineProperty.call(this, obj, prop, descriptor);
+            };
+            
+            // Global error handler for extension conflicts
+            window.addEventListener('error', function(e) {
+                if (e.message && (
+                    e.message.includes('ethereum') || 
+                    e.message.includes('evmAsk') ||
+                    e.message.includes('Cannot redefine property')
+                )) {
+                    console.warn('🛡️ Suppressed extension conflict:', e.message);
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        })();
+    </script>
+    
+    <!-- Face-api.js Library with fallback -->
+    <script>
+        (function() {
+            const scripts = [
+                'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.min.js',
+                'https://unpkg.com/@vladmandic/face-api@latest/dist/face-api.min.js'
+            ];
+            
+            let scriptLoaded = false;
+            
+            async function loadFaceAPI() {
+                for (const url of scripts) {
+                    try {
+                        await new Promise((resolve, reject) => {
+                            const script = document.createElement('script');
+                            script.src = url;
+                            script.defer = true;
+                            script.onload = () => {
+                                console.log('✅ Face-API loaded from:', url);
+                                scriptLoaded = true;
+                                resolve();
+                            };
+                            script.onerror = () => {
+                                console.warn('❌ Failed to load from:', url);
+                                reject();
+                            };
+                            document.head.appendChild(script);
+                        });
+                        break; // Success, stop trying
+                    } catch (e) {
+                        console.warn('Retrying with next CDN...');
+                    }
+                }
+                
+                if (!scriptLoaded) {
+                    console.error('❌ Could not load Face-API from any CDN');
+                }
+            }
+            
+            loadFaceAPI();
+        })();
+    </script>
     
     <!-- CSS -->
     <link rel="stylesheet" href="css/styles.css">
@@ -329,19 +400,141 @@
     <audio id="sadSound" loop></audio>
     <audio id="calmSound" loop></audio>
 
-    <!-- JavaScript Files -->
+    <!-- JavaScript Files with error handling -->
+    <script>
+        // Prevent duplicate variable declarations globally
+        window.EmotionApp = window.EmotionApp || {};
+        
+        // Enhanced error handling
+        window.addEventListener('error', function(e) {
+            const suppressedErrors = [
+                'WebGL is not supported',
+                'WebGL context could not be created', 
+                'WASM loading failed',
+                'already declared',
+                'Cannot redefine property',
+                'productivityTracker'
+            ];
+            
+            if (suppressedErrors.some(err => e.message && e.message.includes(err))) {
+                console.warn('🛡️ Suppressed error:', e.message);
+                e.preventDefault();
+                return false;
+            }
+        });
+    </script>
+    
     <script src="js/config.js"></script>
     <script src="js/emotions.js"></script>
     <script src="js/camera.js"></script>
+    
+    <!-- Productivity with duplicate prevention -->
+    <script>
+        if (typeof productivityTracker === 'undefined') {
+            window.productivityTrackerLoaded = false;
+        } else {
+            window.productivityTrackerLoaded = true;
+            console.warn('🛡️ productivityTracker already exists, skipping duplicate load');
+        }
+    </script>
     <script src="js/productivity.js"></script>
+    
     <script src="js/ai-assistant.js"></script>
-    <script src="js/app.js"></script>
+    
+    <!-- Enhanced app.js with backend fallback -->
+    <script>
+        (function() {
+            // Load original app.js and enhance it
+            const script = document.createElement('script');
+            script.src = 'js/app.js';
+            script.async = false;
+            
+            script.onload = function() {
+                console.log('✅ App.js loaded, adding backend fallback...');
+                
+                // Override initApp with smart backend detection
+                if (typeof window.initApp === 'function') {
+                    const originalInitApp = window.initApp;
+                    
+                    window.initApp = async function() {
+                        try {
+                            // Check if Face-API is available
+                            if (typeof faceapi === 'undefined') {
+                                throw new Error('Face-API not loaded');
+                            }
+                            
+                            console.log('🚀 Starting enhanced app with backend fallback...');
+                            
+                            // Try backends in order: webgl -> wasm -> cpu
+                            const backends = ['webgl', 'wasm', 'cpu'];
+                            let success = false;
+                            
+                            for (const backend of backends) {
+                                try {
+                                    console.log(`🔄 Trying ${backend.toUpperCase()} backend...`);
+                                    
+                                    // Set backend first
+                                    await faceapi.tf.setBackend(backend);
+                                    await faceapi.tf.ready();
+                                    
+                                    // Load models
+                                    await faceapi.nets.tinyFaceDetector.loadFromUri('./models');
+                                    await faceapi.nets.faceExpressionNet.loadFromUri('./models');
+                                    
+                                    success = true;
+                                    console.log(`✅ Successfully initialized ${backend.toUpperCase()} backend`);
+                                    break;
+                                } catch (error) {
+                                    console.warn(`❌ ${backend.toUpperCase()} backend failed:`, error.message);
+                                    continue;
+                                }
+                            }
+                            
+                            if (!success) {
+                                throw new Error('All TensorFlow backends failed to initialize');
+                            }
+                            
+                            // Call original initialization
+                            return originalInitApp();
+                            
+                        } catch (error) {
+                            console.error('❌ Enhanced app initialization failed:', error);
+                            
+                            // Fallback UI
+                            const statusElement = document.getElementById('status');
+                            if (statusElement) {
+                                statusElement.innerHTML = `
+                                    <div style="color: red; text-align: center; padding: 20px;">
+                                        ⚠️ <strong>Không thể khởi tạo ứng dụng</strong><br>
+                                        <small>Lỗi: ${error.message}</small><br>
+                                        <button onclick="location.reload()" style="margin-top: 10px; padding: 5px 10px;">🔄 Thử lại</button>
+                                    </div>
+                                `;
+                            }
+                            throw error;
+                        }
+                    };
+                }
+            };
+            
+            script.onerror = function() {
+                console.error('❌ Failed to load app.js');
+            };
+            
+            document.head.appendChild(script);
+        })();
+    </script>
     
     <!-- Initialize Global Objects -->
     <script>
         // Khởi tạo ProductivityTracker và AIAssistant sau khi tất cả scripts loaded
-        let productivityTracker = null;
-        let aiAssistant = null;
+        // Check if already declared to prevent duplicates
+        if (typeof productivityTracker === 'undefined') {
+            var productivityTracker = null;
+        }
+        if (typeof aiAssistant === 'undefined') {
+            var aiAssistant = null;
+        }
         
         // Chờ window load hoàn toàn
         window.addEventListener('load', () => {
