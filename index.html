@@ -6,7 +6,17 @@
     <title>🎭 AI Emotion Detection - Ultimate Version</title>
     
     <!-- Face-API.js Library -->
-    <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.min.js"></script>
+    <script>
+        (function() {
+            // CDN sources for Face-API.js
+            const scripts = [
+                'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.min.js',
+                'https://unpkg.com/@vladmandic/face-api/dist/face-api.min.js',
+                'https://cdnjs.cloudflare.com/ajax/libs/face-api.js/0.22.2/face-api.min.js'
+            ];
+            
+            let scriptLoaded = false;
+            const loadStartTime = Date.now();
             
             // Preload models paths
             window.MODEL_PATHS = {
