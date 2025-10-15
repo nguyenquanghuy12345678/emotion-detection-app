@@ -3,51 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Trợ Lý Công Việc - Emotion Detection (Fixed)</title>
+    <title>🎭 AI Emotion Detection - Ultimate Version</title>
     
-    <!-- Add favicon to prevent 404 error -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
-    
-    <!-- Prevent extension conflicts -->
-    <script>
-        // Prevent Ethereum wallet extension conflicts
-        (function() {
-            const originalDefineProperty = Object.defineProperty;
-            Object.defineProperty = function(obj, prop, descriptor) {
-                if (prop === 'ethereum' && window.ethereum) {
-                    console.warn('Prevented ethereum redefinition by extension');
-                    return obj;
-                }
-                return originalDefineProperty.call(this, obj, prop, descriptor);
-            };
-            
-            // Global error handler for extension conflicts
-            window.addEventListener('error', function(e) {
-                if (e.message && (
-                    e.message.includes('ethereum') || 
-                    e.message.includes('evmAsk') ||
-                    e.message.includes('Cannot redefine property')
-                )) {
-                    console.warn('🛡️ Suppressed extension conflict:', e.message);
-                    e.preventDefault();
-                    return false;
-                }
-            });
-        })();
-    </script>
-    
-    <!-- Face-api.js Library with enhanced fallback and preload optimization -->
-    <script>
-        (function() {
-            // Multiple CDN sources for better reliability
-            const scripts = [
-                'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.min.js',
-                'https://unpkg.com/@vladmandic/face-api@latest/dist/face-api.min.js',
-                'https://cdn.skypack.dev/@vladmandic/face-api'
-            ];
-            
-            let scriptLoaded = false;
-            let loadStartTime = Date.now();
+    <!-- Face-API.js Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.min.js"></script>
             
             // Preload models paths
             window.MODEL_PATHS = {
