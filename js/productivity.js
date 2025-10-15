@@ -3,6 +3,15 @@
 // ============================================
 
 class ProductivityTracker {
+    // Trả về thống kê hiện tại cho UI
+    getCurrentStats() {
+        return {
+            totalWorkTime: this.stats.totalWorkTime,
+            focusedTime: this.stats.focusedTime,
+            distractedTime: this.stats.distractedTime,
+            focusScore: this.focusScore || 0
+        };
+    }
     constructor() {
         // Trạng thái làm việc
         this.workSessions = [];
