@@ -2,6 +2,8 @@
 // PRODUCTIVITY TRACKER - AI HỖ TRỢ CÔNG VIỆC
 // ============================================
 
+console.log('🔄 Loading productivity.js...');
+
 class ProductivityTracker {
     // Trả về thống kê hiện tại cho UI
     getCurrentStats() {
@@ -660,12 +662,32 @@ class ProductivityTracker {
     }
 }
 
-// Khởi tạo khi DOM ready - chỉ dùng window.productivityTracker
-document.addEventListener('DOMContentLoaded', () => {
-    if (!window.productivityTracker) {
-        window.productivityTracker = new ProductivityTracker();
-        console.log('✅ ProductivityTracker initialized in productivity.js');
-    } else {
-        console.log('⚠️ ProductivityTracker already exists, skipping initialization');
+// Khởi tạo ngay lập tức và cả khi DOM ready
+(function() {
+    // Khởi tạo ngay
+    if (typeof window.productivityTracker === 'undefined') {
+        try {
+            window.productivityTracker = new ProductivityTracker();
+            console.log('✅ ProductivityTracker initialized immediately in productivity.js');
+        } catch (error) {
+            console.error('❌ Error creating ProductivityTracker:', error);
+        }
     }
-});
+    
+    // Đảm bảo khởi tạo khi DOM ready
+    document.addEventListener('DOMContentLoaded', () => {
+        if (!window.productivityTracker) {
+            try {
+                window.productivityTracker = new ProductivityTracker();
+                console.log('✅ ProductivityTracker initialized on DOMContentLoaded');
+            } catch (error) {
+                console.error('❌ Error creating ProductivityTracker on DOM ready:', error);
+            }
+        } else {
+            console.log('⚠️ ProductivityTracker already exists, skipping initialization');
+        }
+    });
+    
+    // Expose class globally để có thể tạo instance khác nếu cần
+    window.ProductivityTracker = ProductivityTracker;
+})();
