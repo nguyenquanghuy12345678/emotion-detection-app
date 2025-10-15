@@ -529,9 +529,6 @@
     <script>
         // Khởi tạo ProductivityTracker và AIAssistant sau khi tất cả scripts loaded
         // Check if already declared to prevent duplicates
-        if (typeof productivityTracker === 'undefined') {
-            var productivityTracker = null;
-        }
         if (typeof aiAssistant === 'undefined') {
             var aiAssistant = null;
         }
@@ -543,33 +540,30 @@
             // Đợi thêm 500ms để đảm bảo tất cả scripts đã parse xong
             setTimeout(() => {
                 try {
-                    console.log('🔍 Checking ProductivityTracker class...');
+                    console.log('🔍 Checking ProductivityTracker instance...');
                     
-                    // Khởi tạo ProductivityTracker
-                    if (typeof ProductivityTracker !== 'undefined') {
-                        console.log('✅ ProductivityTracker class found, creating instance...');
-                        productivityTracker = new ProductivityTracker();
-                        window.productivityTracker = productivityTracker;
-                        console.log('✅ ProductivityTracker initialized successfully!');
-                        console.log('   Methods available:', Object.getOwnPropertyNames(Object.getPrototypeOf(productivityTracker)).slice(0, 5).join(', '));
+                    // Sử dụng ProductivityTracker instance đã được khởi tạo từ productivity.js
+                    if (typeof window.productivityTracker !== 'undefined' && window.productivityTracker !== null) {
+                        console.log('✅ ProductivityTracker instance found from productivity.js!');
+                        console.log('   Methods available:', Object.getOwnPropertyNames(Object.getPrototypeOf(window.productivityTracker)).slice(0, 5).join(', '));
                     } else {
-                        console.error('❌ ProductivityTracker class not found! Check js/productivity.js');
-                        alert('❌ Lỗi: Không tìm thấy ProductivityTracker class. Kiểm tra file js/productivity.js');
+                        console.error('❌ ProductivityTracker instance not found! Check js/productivity.js initialization');
+                        alert('❌ Lỗi: Không tìm thấy ProductivityTracker instance. Kiểm tra file js/productivity.js');
                         return;
                     }
                     
                     console.log('🔍 Checking AIAssistant class...');
                     
                     // Khởi tạo AIAssistant
-                    if (typeof AIAssistant !== 'undefined' && productivityTracker) {
+                    if (typeof AIAssistant !== 'undefined' && window.productivityTracker) {
                         console.log('✅ AIAssistant class found, creating instance...');
-                        aiAssistant = new AIAssistant(productivityTracker);
+                        aiAssistant = new AIAssistant(window.productivityTracker);
                         window.aiAssistant = aiAssistant;
                         console.log('✅ AIAssistant initialized successfully!');
                         console.log('   Auto mode enabled:', aiAssistant.autoMode.enabled);
                     } else {
-                        console.error('❌ AIAssistant class not found! Check js/ai-assistant.js');
-                        alert('❌ Lỗi: Không tìm thấy AIAssistant class. Kiểm tra file js/ai-assistant.js');
+                        console.error('❌ AIAssistant class not found or ProductivityTracker not ready! Check js/ai-assistant.js and js/productivity.js');
+                        alert('❌ Lỗi: Không tìm thấy AIAssistant class hoặc ProductivityTracker chưa sẵn sàng. Kiểm tra file js/ai-assistant.js và js/productivity.js');
                         return;
                     }
                     

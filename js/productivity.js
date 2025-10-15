@@ -656,5 +656,9 @@ let productivityTracker = null;
 
 // Khởi tạo khi DOM ready
 document.addEventListener('DOMContentLoaded', () => {
-    productivityTracker = new ProductivityTracker();
+    if (!window.productivityTracker) {
+        productivityTracker = new ProductivityTracker();
+        window.productivityTracker = productivityTracker;
+        console.log('✅ ProductivityTracker initialized in productivity.js');
+    }
 });
