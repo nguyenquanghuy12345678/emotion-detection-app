@@ -651,14 +651,12 @@ class ProductivityTracker {
     }
 }
 
-// Khởi tạo toàn cục
-let productivityTracker = null;
-
-// Khởi tạo khi DOM ready
+// Khởi tạo khi DOM ready - chỉ dùng window.productivityTracker
 document.addEventListener('DOMContentLoaded', () => {
     if (!window.productivityTracker) {
-        productivityTracker = new ProductivityTracker();
-        window.productivityTracker = productivityTracker;
+        window.productivityTracker = new ProductivityTracker();
         console.log('✅ ProductivityTracker initialized in productivity.js');
+    } else {
+        console.log('⚠️ ProductivityTracker already exists, skipping initialization');
     }
 });

@@ -460,9 +460,7 @@
                 'WebGL is not supported',
                 'WebGL context could not be created', 
                 'WASM loading failed',
-                'already declared',
-                'Cannot redefine property',
-                'productivityTracker'
+                'Cannot redefine property'
             ];
             
             if (suppressedErrors.some(err => e.message && e.message.includes(err))) {
@@ -479,11 +477,11 @@
     
     <!-- Productivity with duplicate prevention -->
     <script>
-        if (typeof productivityTracker === 'undefined') {
+        if (typeof window.productivityTracker === 'undefined') {
             window.productivityTrackerLoaded = false;
         } else {
             window.productivityTrackerLoaded = true;
-            console.warn('🛡️ productivityTracker already exists, skipping duplicate load');
+            console.warn('🛡️ ProductivityTracker already exists, skipping duplicate load');
         }
     </script>
     <script src="js/productivity.js"></script>
@@ -717,7 +715,7 @@
                     console.log('🎨 Updating UI...');
                     
                     // Cập nhật UI ban đầu
-                    if (productivityTracker) {
+                    if (window.productivityTracker) {
                         try {
                             updateProductivityUI();
                             console.log('✅ Productivity UI updated');
