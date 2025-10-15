@@ -5,15 +5,6 @@
 console.log('🔄 Loading productivity.js...');
 
 class ProductivityTracker {
-    // Trả về thống kê hiện tại cho UI
-    getCurrentStats() {
-        return {
-            totalWorkTime: this.stats.totalWorkTime,
-            focusedTime: this.stats.focusedTime,
-            distractedTime: this.stats.distractedTime,
-            focusScore: this.focusScore || 0
-        };
-    }
     constructor() {
         // Trạng thái làm việc
         this.workSessions = [];
@@ -65,6 +56,16 @@ class ProductivityTracker {
         this.setupUI();
         this.updateStatsDisplay();
         this.startSessionTracking();
+    }
+
+    // Trả về thống kê hiện tại cho UI
+    getCurrentStats() {
+        return {
+            totalWorkTime: this.stats.totalWorkTime || 0,
+            focusedTime: this.stats.focusedTime || 0,
+            distractedTime: this.stats.distractedTime || 0,
+            focusScore: this.focusScore || 0
+        };
     }
     
     // ============================================
