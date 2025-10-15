@@ -36,42 +36,91 @@
         })();
     </script>
     
-    <!-- Face-api.js Library with fallback -->
+    <!-- Face-api.js Library with enhanced fallback and preload optimization -->
     <script>
         (function() {
+            // Multiple CDN sources for better reliability
             const scripts = [
                 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.min.js',
-                'https://unpkg.com/@vladmandic/face-api@latest/dist/face-api.min.js'
+                'https://unpkg.com/@vladmandic/face-api@latest/dist/face-api.min.js',
+                'https://cdn.skypack.dev/@vladmandic/face-api'
             ];
             
             let scriptLoaded = false;
+            let loadStartTime = Date.now();
+            
+            // Preload models paths
+            window.MODEL_PATHS = {
+                tinyFaceDetector: './models/tiny_face_detector_model-weights_manifest.json',
+                faceExpressionNet: './models/face_expression_model-weights_manifest.json'
+            };
             
             async function loadFaceAPI() {
+                console.log('🤖 Starting Face-API loading process...');
+                
                 for (const url of scripts) {
                     try {
+                        console.log(`🔄 Attempting to load Face-API from: ${url}`);
+                        
                         await new Promise((resolve, reject) => {
                             const script = document.createElement('script');
                             script.src = url;
                             script.defer = true;
+                            script.crossOrigin = 'anonymous';
+                            
                             script.onload = () => {
-                                console.log('✅ Face-API loaded from:', url);
+                                const loadTime = Date.now() - loadStartTime;
+                                console.log(`✅ Face-API loaded successfully from: ${url} (${loadTime}ms)`);
                                 scriptLoaded = true;
+                                
+                                // Verify Face-API is available
+                                if (typeof faceapi !== 'undefined') {
+                                    console.log('✅ Face-API object is available globally');
+                                    window.faceApiLoaded = true;
+                                } else {
+                                    console.warn('⚠️ Face-API loaded but not available globally');
+                                }
+                                
                                 resolve();
                             };
-                            script.onerror = () => {
-                                console.warn('❌ Failed to load from:', url);
-                                reject();
+                            
+                            script.onerror = (error) => {
+                                console.warn(`❌ Failed to load from: ${url}`, error);
+                                reject(new Error(`Failed to load from ${url}`));
                             };
+                            
+                            // Timeout after 15 seconds
+                            setTimeout(() => {
+                                if (!scriptLoaded) {
+                                    console.warn(`⏰ Timeout loading from: ${url}`);
+                                    reject(new Error(`Timeout loading from ${url}`));
+                                }
+                            }, 15000);
+                            
                             document.head.appendChild(script);
                         });
                         break; // Success, stop trying
                     } catch (e) {
-                        console.warn('Retrying with next CDN...');
+                        console.warn(`❌ Error loading from ${url}:`, e.message);
+                        continue; // Try next CDN
                     }
                 }
                 
                 if (!scriptLoaded) {
-                    console.error('❌ Could not load Face-API from any CDN');
+                    console.error('❌ CRITICAL: Could not load Face-API from any CDN');
+                    window.faceApiLoadError = true;
+                    
+                    // Show user-friendly error
+                    const statusEl = document.getElementById('status');
+                    if (statusEl) {
+                        statusEl.innerHTML = `
+                            <div style="color: red; text-align: center; padding: 20px;">
+                                ⚠️ <strong>Không thể tải thư viện Face-API</strong><br>
+                                <small>Kiểm tra kết nối internet và thử lại</small><br>
+                                <button onclick="location.reload()" style="margin-top: 10px; padding: 8px 16px;">🔄 Thử lại</button>
+                            </div>
+                        `;
+                    }
                 }
             }
             
@@ -460,39 +509,94 @@
                         try {
                             // Check if Face-API is available
                             if (typeof faceapi === 'undefined') {
-                                throw new Error('Face-API not loaded');
+                                throw new Error('Face-API library not loaded - check network connection');
                             }
                             
-                            console.log('🚀 Starting enhanced app with backend fallback...');
+                            console.log('🚀 Starting enhanced app with intelligent backend selection...');
                             
-                            // Try backends in order: webgl -> wasm -> cpu
-                            const backends = ['webgl', 'wasm', 'cpu'];
+                            // Enhanced backend detection and fallback
+                            const backends = [
+                                { name: 'webgl', priority: 1, description: 'GPU accelerated (fastest)' },
+                                { name: 'wasm', priority: 2, description: 'WebAssembly (balanced)' },
+                                { name: 'cpu', priority: 3, description: 'CPU only (slowest but most compatible)' }
+                            ];
+                            
                             let success = false;
+                            let selectedBackend = null;
                             
                             for (const backend of backends) {
                                 try {
-                                    console.log(`🔄 Trying ${backend.toUpperCase()} backend...`);
+                                    console.log(`🔄 Testing ${backend.name.toUpperCase()} backend (${backend.description})...`);
                                     
-                                    // Set backend first
-                                    await faceapi.tf.setBackend(backend);
-                                    await faceapi.tf.ready();
+                                    // Set backend with timeout
+                                    const backendPromise = Promise.all([
+                                        faceapi.tf.setBackend(backend.name),
+                                        faceapi.tf.ready()
+                                    ]);
                                     
-                                    // Load models
-                                    await faceapi.nets.tinyFaceDetector.loadFromUri('./models');
-                                    await faceapi.nets.faceExpressionNet.loadFromUri('./models');
+                                    const timeoutPromise = new Promise((_, reject) => 
+                                        setTimeout(() => reject(new Error('Backend initialization timeout')), 10000)
+                                    );
                                     
-                                    success = true;
-                                    console.log(`✅ Successfully initialized ${backend.toUpperCase()} backend`);
-                                    break;
+                                    await Promise.race([backendPromise, timeoutPromise]);
+                                    
+                                    // Verify backend is working
+                                    const backendInfo = faceapi.tf.getBackend();
+                                    console.log(`✅ ${backend.name.toUpperCase()} backend initialized successfully:`, backendInfo);
+                                    
+                                    // Test model loading with progress
+                                    console.log('📦 Loading AI models...');
+                                    const modelLoadStart = Date.now();
+                                    
+                                    // Load models with timeout and retry
+                                    const modelPromises = [
+                                        faceapi.nets.tinyFaceDetector.loadFromUri('./models'),
+                                        faceapi.nets.faceExpressionNet.loadFromUri('./models')
+                                    ];
+                                    
+                                    const modelTimeoutPromise = new Promise((_, reject) => 
+                                        setTimeout(() => reject(new Error('Model loading timeout after 30 seconds')), 30000)
+                                    );
+                                    
+                                    await Promise.race([Promise.all(modelPromises), modelTimeoutPromise]);
+                                    
+                                    const modelLoadTime = Date.now() - modelLoadStart;
+                                    console.log(`✅ Models loaded successfully in ${modelLoadTime}ms`);
+                                    
+                                    // Test model functionality
+                                    console.log('🧪 Testing model functionality...');
+                                    if (faceapi.nets.tinyFaceDetector.isLoaded && faceapi.nets.faceExpressionNet.isLoaded) {
+                                        console.log('✅ All models verified and ready');
+                                        success = true;
+                                        selectedBackend = backend;
+                                        break;
+                                    } else {
+                                        throw new Error('Models loaded but not properly initialized');
+                                    }
+                                    
                                 } catch (error) {
-                                    console.warn(`❌ ${backend.toUpperCase()} backend failed:`, error.message);
-                                    continue;
+                                    console.warn(`❌ ${backend.name.toUpperCase()} backend failed:`, error.message);
+                                    
+                                    // Clean up failed backend
+                                    try {
+                                        await faceapi.tf.disposeVariables();
+                                    } catch (cleanupError) {
+                                        console.warn('⚠️ Cleanup error:', cleanupError.message);
+                                    }
+                                    
+                                    continue; // Try next backend
                                 }
                             }
                             
                             if (!success) {
-                                throw new Error('All TensorFlow backends failed to initialize');
+                                throw new Error('All TensorFlow backends failed to initialize - check models folder and network connection');
                             }
+                            
+                            // Save successful configuration
+                            window.currentBackend = selectedBackend;
+                            localStorage.setItem('preferredBackend', selectedBackend.name);
+                            
+                            console.log(`🎉 System ready with ${selectedBackend.name.toUpperCase()} backend!`);
                             
                             // Call original initialization
                             return originalInitApp();
@@ -500,17 +604,63 @@
                         } catch (error) {
                             console.error('❌ Enhanced app initialization failed:', error);
                             
-                            // Fallback UI
+                            // Enhanced error handling with diagnostics
                             const statusElement = document.getElementById('status');
                             if (statusElement) {
+                                let errorDetails = '';
+                                let suggestions = '';
+                                
+                                if (error.message.includes('Face-API')) {
+                                    errorDetails = 'Không thể tải thư viện Face-API';
+                                    suggestions = '• Kiểm tra kết nối internet<br>• Thử tải lại trang<br>• Kiểm tra tường lửa/proxy';
+                                } else if (error.message.includes('models')) {
+                                    errorDetails = 'Không thể tải AI models';
+                                    suggestions = '• Kiểm tra thư mục /models<br>• Đảm bảo có file .json và binary<br>• Thử chạy từ HTTP server';
+                                } else if (error.message.includes('backend')) {
+                                    errorDetails = 'Không thể khởi tạo TensorFlow backend';
+                                    suggestions = '• Thử trình duyệt khác<br>• Kiểm tra WebGL support<br>• Cập nhật browser';
+                                } else if (error.message.includes('timeout')) {
+                                    errorDetails = 'Quá thời gian tải (chậm mạng)';
+                                    suggestions = '• Thử lại khi mạng ổn định<br>• Đợi thêm ít phút<br>• Kiểm tra tốc độ mạng';
+                                } else {
+                                    errorDetails = 'Lỗi không xác định';
+                                    suggestions = '• Mở Developer Tools (F12)<br>• Kiểm tra Console logs<br>• Thử trình duyệt khác';
+                                }
+                                
                                 statusElement.innerHTML = `
-                                    <div style="color: red; text-align: center; padding: 20px;">
-                                        ⚠️ <strong>Không thể khởi tạo ứng dụng</strong><br>
-                                        <small>Lỗi: ${error.message}</small><br>
-                                        <button onclick="location.reload()" style="margin-top: 10px; padding: 5px 10px;">🔄 Thử lại</button>
+                                    <div style="background: #fee; border: 2px solid #fcc; border-radius: 8px; padding: 20px; margin: 20px; text-align: center;">
+                                        <div style="font-size: 48px; margin-bottom: 10px;">⚠️</div>
+                                        <h3 style="color: #c00; margin: 10px 0;">Không thể khởi tạo ứng dụng</h3>
+                                        <div style="color: #800; margin: 10px 0;"><strong>${errorDetails}</strong></div>
+                                        <div style="color: #600; font-size: 12px; margin: 10px 0;">
+                                            Chi tiết: <code>${error.message}</code>
+                                        </div>
+                                        <div style="text-align: left; margin: 15px 0; padding: 10px; background: #ffd; border-left: 4px solid #fa0;">
+                                            <strong>💡 Gợi ý khắc phục:</strong><br>
+                                            ${suggestions}
+                                        </div>
+                                        <div style="margin-top: 15px;">
+                                            <button onclick="location.reload()" style="margin: 5px; padding: 10px 20px; background: #007cba; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                                                🔄 Tải lại trang
+                                            </button>
+                                            <button onclick="openDiagnostic()" style="margin: 5px; padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                                                � Chẩn đoán
+                                            </button>
+                                        </div>
                                     </div>
                                 `;
                             }
+                            
+                            // Log detailed error for debugging
+                            console.group('🔍 Error Diagnostics');
+                            console.error('Error message:', error.message);
+                            console.error('Error stack:', error.stack);
+                            console.log('Face-API available:', typeof faceapi !== 'undefined');
+                            console.log('TensorFlow available:', typeof tf !== 'undefined');
+                            console.log('Browser:', navigator.userAgent);
+                            console.log('Online:', navigator.onLine);
+                            console.groupEnd();
+                            
                             throw error;
                         }
                     };
@@ -590,6 +740,24 @@
                     console.log('✅ You can now use:');
                     console.log('   - window.productivityTracker');
                     console.log('   - window.aiAssistant');
+                    
+                    // Update status UI to show ready state
+                    const statusElement = document.getElementById('status');
+                    if (statusElement) {
+                        statusElement.innerHTML = `
+                            <div style="color: green; text-align: center; padding: 10px;">
+                                ✅ <strong>Hệ thống đã sẵn sàng!</strong><br>
+                                <small>Nhấn "Bắt Đầu" để bắt đầu nhận diện cảm xúc</small>
+                            </div>
+                        `;
+                    }
+                    
+                    // Enable start button
+                    const startBtn = document.getElementById('startBtn');
+                    if (startBtn) {
+                        startBtn.disabled = false;
+                        startBtn.style.opacity = '1';
+                    }
                     
                 } catch (error) {
                     console.error('❌ CRITICAL ERROR initializing systems:', error);
@@ -1071,6 +1239,16 @@
             }).join('');
             
             timeline.innerHTML = timelineHTML;
+        }
+        
+        // Diagnostic function for troubleshooting
+        function openDiagnostic() {
+            alert('🔍 Chẩn đoán hệ thống:\n\n' +
+                  '� Face-API: ' + (typeof faceapi !== 'undefined' ? '✅ OK' : '❌ Lỗi') + '\n' +
+                  '🤖 ProductivityTracker: ' + (typeof window.productivityTracker !== 'undefined' ? '✅ OK' : '❌ Lỗi') + '\n' +
+                  '🧠 AIAssistant: ' + (typeof window.aiAssistant !== 'undefined' ? '✅ OK' : '❌ Lỗi') + '\n' +
+                  '� Mạng: ' + (navigator.onLine ? '✅ Online' : '❌ Offline') + '\n\n' +
+                  'Kiểm tra Console (F12) để xem chi tiết!');
         }
         
         // Allow Enter key to add note
