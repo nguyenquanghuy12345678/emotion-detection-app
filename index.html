@@ -973,21 +973,38 @@
         window.addEventListener('load', () => {
             console.log('🔧 Page loaded, initializing systems...');
             
-            // Đợi thêm 500ms để đảm bảo tất cả scripts đã parse xong
-            setTimeout(() => {
-                try {
-                    console.log('🔍 Checking ProductivityTracker instance...');
-                    
-                    // Sử dụng ProductivityTracker instance đã được khởi tạo từ productivity.js
-                    if (typeof window.productivityTracker !== 'undefined' && window.productivityTracker !== null) {
-                        console.log('✅ ProductivityTracker instance found from productivity.js!');
-                        console.log('   Methods available:', Object.getOwnPropertyNames(Object.getPrototypeOf(window.productivityTracker)).slice(0, 5).join(', '));
-                    } else {
-                        console.error('❌ ProductivityTracker instance not found! Check js/productivity.js initialization');
-                        alert('❌ Lỗi: Không tìm thấy ProductivityTracker instance. Kiểm tra file js/productivity.js');
-                        return;
+            // Function để kiểm tra và khởi tạo systems
+            function initializeSystems(attempt = 1) {
+                console.log(`🔍 Checking ProductivityTracker instance (attempt ${attempt})...`);
+                
+                // Kiểm tra ProductivityTracker
+                if (typeof window.productivityTracker !== 'undefined' && window.productivityTracker !== null) {
+                    console.log('✅ ProductivityTracker instance found from productivity.js!');
+                    console.log('   Methods available:', Object.getOwnPropertyNames(Object.getPrototypeOf(window.productivityTracker)).slice(0, 5).join(', '));
+                } else if (attempt <= 3) {
+                    // Thử tạo instance nếu class có sẵn
+                    if (typeof window.ProductivityTracker === 'function') {
+                        try {
+                            console.log(`🔧 Creating ProductivityTracker instance (attempt ${attempt})...`);
+                            window.productivityTracker = new window.ProductivityTracker();
+                            console.log('✅ ProductivityTracker instance created successfully!');
+                        } catch (error) {
+                            console.error('❌ Error creating ProductivityTracker:', error);
+                        }
                     }
                     
+                    if (typeof window.productivityTracker === 'undefined') {
+                        console.warn(`⏳ ProductivityTracker not ready yet, retrying in ${attempt * 200}ms...`);
+                        setTimeout(() => initializeSystems(attempt + 1), attempt * 200);
+                        return;
+                    }
+                } else {
+                    console.error('❌ ProductivityTracker instance not found after 3 attempts!');
+                    alert('❌ Lỗi: Không tìm thấy ProductivityTracker instance. Vui lòng tải lại trang.');
+                    return;
+                }
+                
+                try {
                     console.log('🔍 Checking AIAssistant class...');
                     
                     // Khởi tạo AIAssistant
@@ -1049,7 +1066,10 @@
                     console.error('Error stack:', error.stack);
                     alert('❌ Lỗi nghiêm trọng khi khởi tạo: ' + error.message + '\n\nXem Console (F12) để biết chi tiết.');
                 }
-            }, 500);
+            }
+            
+            // Bắt đầu khởi tạo systems sau 500ms
+            setTimeout(() => initializeSystems(), 500);
         });
         
         // Update UI functions

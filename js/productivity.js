@@ -663,32 +663,69 @@ class ProductivityTracker {
     }
 }
 
-// Khởi tạo ngay lập tức và cả khi DOM ready
+// Khởi tạo ProductivityTracker với nhiều cách fallback
 (function() {
-    // Khởi tạo ngay
-    if (typeof window.productivityTracker === 'undefined') {
+    console.log('🚀 ProductivityTracker script loading...');
+    console.log('📊 DOM ready state:', document.readyState);
+    
+    // Expose class globally ngay lập tức
+    if (typeof window === 'undefined') {
+        console.error('❌ Window object not available');
+        return;
+    }
+    
+    window.ProductivityTracker = ProductivityTracker;
+    console.log('✅ ProductivityTracker class exposed globally');
+    
+    function createProductivityTracker() {
+        if (typeof window.productivityTracker !== 'undefined') {
+            console.log('⚠️ ProductivityTracker instance already exists');
+            return;
+        }
+        
         try {
+            console.log('🔧 Creating new ProductivityTracker instance...');
             window.productivityTracker = new ProductivityTracker();
-            console.log('✅ ProductivityTracker initialized immediately in productivity.js');
+            console.log('✅ ProductivityTracker instance created successfully!');
+            console.log('📋 Instance type:', typeof window.productivityTracker);
+            console.log('🔍 Available methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(window.productivityTracker)).slice(0, 10));
+            
+            // Test method
+            if (typeof window.productivityTracker.getCurrentStats === 'function') {
+                console.log('✅ getCurrentStats method is available');
+            } else {
+                console.error('❌ getCurrentStats method is NOT available');
+            }
+            
         } catch (error) {
-            console.error('❌ Error creating ProductivityTracker:', error);
+            console.error('❌ CRITICAL: Failed to create ProductivityTracker instance:', error);
+            console.error('Error stack:', error.stack);
         }
     }
     
-    // Đảm bảo khởi tạo khi DOM ready
-    document.addEventListener('DOMContentLoaded', () => {
-        if (!window.productivityTracker) {
-            try {
-                window.productivityTracker = new ProductivityTracker();
-                console.log('✅ ProductivityTracker initialized on DOMContentLoaded');
-            } catch (error) {
-                console.error('❌ Error creating ProductivityTracker on DOM ready:', error);
-            }
-        } else {
-            console.log('⚠️ ProductivityTracker already exists, skipping initialization');
-        }
-    });
+    // Thử khởi tạo ngay lập tức
+    if (document.readyState === 'loading') {
+        console.log('📄 Document is loading, waiting for DOMContentLoaded...');
+        document.addEventListener('DOMContentLoaded', createProductivityTracker);
+    } else if (document.readyState === 'interactive' || document.readyState === 'complete') {
+        console.log('📄 Document ready, creating instance immediately...');
+        createProductivityTracker();
+    }
     
-    // Expose class globally để có thể tạo instance khác nếu cần
-    window.ProductivityTracker = ProductivityTracker;
+    // Backup: khởi tạo sau 100ms nếu chưa có
+    setTimeout(() => {
+        if (typeof window.productivityTracker === 'undefined') {
+            console.log('⏰ Backup initialization after 100ms...');
+            createProductivityTracker();
+        }
+    }, 100);
+    
+    // Backup cuối cùng: khởi tạo sau 1s
+    setTimeout(() => {
+        if (typeof window.productivityTracker === 'undefined') {
+            console.log('🚨 Final fallback initialization after 1s...');
+            createProductivityTracker();
+        }
+    }, 1000);
+    
 })();
