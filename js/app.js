@@ -74,14 +74,31 @@ class EmotionDetectionApp {
 
     // Update status message
     updateStatus(message, showLoader) {
+        console.log(`🔄 updateStatus called with: "${message}", showLoader: ${showLoader}`);
+        
         const statusElement = document.getElementById('status');
         const statusText = document.getElementById('statusText');
+        
+        console.log(`📋 Elements found - status: ${!!statusElement}, statusText: ${!!statusText}`);
+        
+        // Kiểm tra xem elements có tồn tại không
+        if (!statusElement) {
+            console.warn('⚠️ Status element not found');
+            return;
+        }
+        
+        if (!statusText) {
+            console.warn('⚠️ StatusText element not found, updating status element directly');
+            statusElement.textContent = message;
+            return;
+        }
+        
         const loader = statusElement.querySelector('.loader');
         
         statusText.textContent = message;
         
         if (showLoader) {
-            if (!loader) {
+            if (!loader && statusElement) {
                 const newLoader = document.createElement('div');
                 newLoader.className = 'loader';
                 statusElement.appendChild(newLoader);
