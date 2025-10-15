@@ -1054,6 +1054,30 @@
                         `;
                     }
                     
+                    // Khởi tạo EmotionDetectionApp
+                    console.log('🎭 Initializing EmotionDetectionApp...');
+                    
+                    // Check if Face-API is loaded
+                    if (typeof faceapi === 'undefined') {
+                        console.error('❌ Face-API not loaded yet! Cannot initialize EmotionDetectionApp');
+                        alert('⚠️ Face-API chưa tải xong. Vui lòng đợi và thử lại.');
+                        return;
+                    }
+                    
+                    if (typeof EmotionDetectionApp !== 'undefined') {
+                        try {
+                            console.log('🔧 Creating EmotionDetectionApp instance...');
+                            window.emotionApp = new EmotionDetectionApp();
+                            console.log('✅ EmotionDetectionApp initialized successfully!');
+                            console.log('📊 Models loaded:', window.emotionApp.modelsLoaded);
+                        } catch (appError) {
+                            console.error('❌ Error initializing EmotionDetectionApp:', appError);
+                            console.error('Error stack:', appError.stack);
+                        }
+                    } else {
+                        console.error('❌ EmotionDetectionApp class not found! Check js/app.js');
+                    }
+                    
                     // Enable start button
                     const startBtn = document.getElementById('startBtn');
                     if (startBtn) {
