@@ -679,9 +679,7 @@
     <script>
         // Khởi tạo ProductivityTracker và AIAssistant sau khi tất cả scripts loaded
         // Check if already declared to prevent duplicates
-        if (typeof aiAssistant === 'undefined') {
-            var aiAssistant = null;
-        }
+        // Sử dụng window.aiAssistant, không khai báo lại
         
         // Chờ window load hoàn toàn
         window.addEventListener('load', () => {
@@ -707,10 +705,9 @@
                     // Khởi tạo AIAssistant
                     if (typeof AIAssistant !== 'undefined' && window.productivityTracker) {
                         console.log('✅ AIAssistant class found, creating instance...');
-                        aiAssistant = new AIAssistant(window.productivityTracker);
-                        window.aiAssistant = aiAssistant;
+                        window.aiAssistant = new AIAssistant(window.productivityTracker);
                         console.log('✅ AIAssistant initialized successfully!');
-                        console.log('   Auto mode enabled:', aiAssistant.autoMode.enabled);
+                        console.log('   Auto mode enabled:', window.aiAssistant.autoMode.enabled);
                     } else {
                         console.error('❌ AIAssistant class not found or ProductivityTracker not ready! Check js/ai-assistant.js and js/productivity.js');
                         alert('❌ Lỗi: Không tìm thấy AIAssistant class hoặc ProductivityTracker chưa sẵn sàng. Kiểm tra file js/ai-assistant.js và js/productivity.js');
