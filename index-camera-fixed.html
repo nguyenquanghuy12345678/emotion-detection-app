@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎭 AI Emotion Detection - Camera Fixed</title>
+    
+    <!-- Face-API.js Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+        
+        .status.loading {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .video-container {
+            position: relative;
+            display: inline-block;
+            margin: 20px auto;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+        
+        #video {
+            width: 640px;
+            height: 480px;
+            max-width: 100%;
+            background: #000;
+            display: block;
+        }
+        
+        #canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+        }
+        
+        .controls {
+            margin: 30px 0;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 140px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+        
+        .btn-success {
+            background: linear-gradient(45deg, #56ab2f, #a8e6cf);
+            color: white;
+        }
+        
+        .btn-danger {
+            background: linear-gradient(45deg, #ff416c, #ff4b2b);
+            color: white;
+        }
+        
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .emotion-display {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            padding: 30px;
+            border-radius: 20px;
+            color: white;
+            margin: 20px 0;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        
+        .emotion-emoji {
+            font-size: 4rem;
+            margin-bottom: 15px;
+        }
+        
+        .emotion-text {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .emotion-confidence {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+        
+        .debug-info {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: left;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                padding: 20px;
+            }
+            
+            #video {
+                width: 100%;
+                height: auto;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎭 AI Emotion Detection</h1>
+        
+        <div id="status" class="status loading">
+            🔄 Đang khởi tạo hệ thống...
+        </div>
+        
+        <div class="video-container" style="display: none;" id="videoContainer">
+            <video id="video" autoplay muted playsinline></video>
+            <canvas id="canvas"></canvas>
+        </div>
+        
+        <div class="controls">
+            <button id="setupBtn" class="btn btn-primary">📹 Thiết lập Camera</button>
+            <button id="startBtn" class="btn btn-success" disabled>▶️ Bắt Đầu</button>
+            <button id="stopBtn" class="btn btn-danger" disabled>⏹️ Dừng</button>
+            <button id="debugBtn" class="btn btn-primary">🔍 Debug</button>
+        </div>
+        
+        <div class="emotion-display">
+            <div id="emotionEmoji" class="emotion-emoji">🤖</div>
+            <div id="emotionText" class="emotion-text">Đang tải...</div>
+            <div id="emotionConfidence" class="emotion-confidence">Vui lòng đợi...</div>
+        </div>
+        
+        <div id="debugInfo" class="debug-info" style="display: none;"></div>
+    </div>
+
+    <script>
+        class EmotionDetectionApp {
+            constructor() {
+                console.log('🚀 Khởi tạo ứng dụng...');
+                
+                // Elements
+                this.video = document.getElementById('video');
+                this.canvas = document.getElementById('canvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.status = document.getElementById('status');
+                this.videoContainer = document.getElementById('videoContainer');
+                
+                // Buttons
+                this.setupBtn = document.getElementById('setupBtn');
+                this.startBtn = document.getElementById('startBtn');
+                this.stopBtn = document.getElementById('stopBtn');
+                this.debugBtn = document.getElementById('debugBtn');
+                
+                // Emotion display
+                this.emotionEmoji = document.getElementById('emotionEmoji');
+                this.emotionText = document.getElementById('emotionText');
+                this.emotionConfidence = document.getElementById('emotionConfidence');
+                this.debugInfo = document.getElementById('debugInfo');
+                
+                // State
+                this.stream = null;
+                this.isRunning = false;
+                this.modelsLoaded = false;
+                this.cameraReady = false;
+                this.detectionInterval = null;
+                
+                this.init();
+            }
+            
+            async init() {
+                try {
+                    this.setupEventListeners();
+                    await this.loadModels();
+                } catch (error) {
+                    console.error('Lỗi khởi tạo:', error);
+                    this.updateStatus('❌ Lỗi khởi tạo: ' + error.message, 'error');
+                }
+            }
+            
+            setupEventListeners() {
+                this.setupBtn.addEventListener('click', () => this.setupCamera());
+                this.startBtn.addEventListener('click', () => this.start());
+                this.stopBtn.addEventListener('click', () => this.stop());
+                this.debugBtn.addEventListener('click', () => this.showDebugInfo());
+            }
+            
+            async loadModels() {
+                try {
+                    this.updateStatus('📦 Đang tải mô hình AI...', 'loading');
+                    
+                    // Kiểm tra Face-API
+                    if (typeof faceapi === 'undefined') {
+                        throw new Error('Face-API không được tải. Kiểm tra kết nối mạng.');
+                    }
+                    
+                    console.log('Đang tải models...');
+                    
+                    // Tải models
+                    await Promise.all([
+                        faceapi.nets.tinyFaceDetector.loadFromUri('./models'),
+                        faceapi.nets.faceExpressionNet.loadFromUri('./models')
+                    ]);
+                    
+                    this.modelsLoaded = true;
+                    this.updateStatus('✅ Mô hình AI đã sẵn sàng!', 'success');
+                    
+                    this.emotionText.textContent = 'Sẵn sàng';
+                    this.emotionConfidence.textContent = 'Nhấn "Thiết lập Camera" để bắt đầu';
+                    
+                } catch (error) {
+                    console.error('Lỗi tải models:', error);
+                    this.updateStatus('❌ Lỗi tải mô hình: ' + error.message, 'error');
+                    
+                    this.emotionEmoji.textContent = '❌';
+                    this.emotionText.textContent = 'Lỗi tải mô hình';
+                    this.emotionConfidence.textContent = error.message;
+                }
+            }
+            
+            async setupCamera() {
+                try {
+                    this.updateStatus('📹 Đang truy cập camera...', 'loading');
+                    
+                    // Dừng stream cũ nếu có
+                    if (this.stream) {
+                        this.stream.getTracks().forEach(track => {
+                            console.log('Dừng track:', track.kind);
+                            track.stop();
+                        });
+                        this.stream = null;
+                    }
+                    
+                    // Kiểm tra hỗ trợ getUserMedia
+                    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                        throw new Error('Trình duyệt không hỗ trợ camera API');
+                    }
+                    
+                    console.log('Đang yêu cầu quyền camera...');
+                    
+                    // Cấu hình camera
+                    const constraints = {
+                        video: {
+                            width: { ideal: 640, max: 1280 },
+                            height: { ideal: 480, max: 720 },
+                            facingMode: 'user'
+                        },
+                        audio: false
+                    };
+                    
+                    // Lấy stream
+                    this.stream = await navigator.mediaDevices.getUserMedia(constraints);
+                    console.log('✅ Đã có quyền camera');
+                    
+                    // Gán vào video element
+                    this.video.srcObject = this.stream;
+                    
+                    // Đợi video sẵn sàng
+                    await new Promise((resolve, reject) => {
+                        const timeout = setTimeout(() => {
+                            reject(new Error('Timeout: Video không tải được sau 10 giây'));
+                        }, 10000);
+                        
+                        this.video.onloadedmetadata = () => {
+                            clearTimeout(timeout);
+                            console.log(`Video dimensions: ${this.video.videoWidth}x${this.video.videoHeight}`);
+                            
+                            // Thiết lập canvas
+                            this.canvas.width = this.video.videoWidth;
+                            this.canvas.height = this.video.videoHeight;
+                            
+                            // Đảm bảo video đang phát
+                            this.video.play().then(() => {
+                                console.log('✅ Video đang phát');
+                                resolve();
+                            }).catch(reject);
+                        };
+                        
+                        this.video.onerror = (e) => {
+                            clearTimeout(timeout);
+                            console.error('Video error:', e);
+                            reject(new Error('Lỗi video loading'));
+                        };
+                    });
+                    
+                    // Hiển thị video container
+                    this.videoContainer.style.display = 'block';
+                    this.cameraReady = true;
+                    
+                    this.updateStatus('✅ Camera sẵn sàng!', 'success');
+                    
+                    // Kích hoạt nút start nếu models đã tải
+                    if (this.modelsLoaded) {
+                        this.startBtn.disabled = false;
+                    }
+                    
+                    this.emotionText.textContent = 'Camera sẵn sàng';
+                    this.emotionConfidence.textContent = 'Nhấn "Bắt Đầu" để nhận diện cảm xúc';
+                    this.setupBtn.textContent = '🔄 Thiết lập lại';
+                    
+                } catch (error) {
+                    console.error('Lỗi camera:', error);
+                    this.updateStatus('❌ Lỗi camera: ' + error.message, 'error');
+                    
+                    this.emotionEmoji.textContent = '📹';
+                    this.emotionText.textContent = 'Lỗi camera';
+                    this.emotionConfidence.textContent = error.message;
+                    
+                    // Gợi ý khắc phục
+                    if (error.message.includes('Permission denied')) {
+                        this.emotionConfidence.textContent = 'Vui lòng cho phép truy cập camera trong trình duyệt';
+                    } else if (error.message.includes('NotFoundError')) {
+                        this.emotionConfidence.textContent = 'Không tìm thấy camera. Kiểm tra camera có được kết nối không.';
+                    }
+                }
+            }
+            
+            start() {
+                if (!this.modelsLoaded || !this.cameraReady) {
+                    alert('Vui lòng đợi mô hình AI và camera sẵn sàng!');
+                    return;
+                }
+                
+                this.isRunning = true;
+                this.startBtn.disabled = true;
+                this.stopBtn.disabled = false;
+                
+                this.updateStatus('🎬 Đang nhận diện cảm xúc...', 'loading');
+                
+                // Bắt đầu detection loop
+                this.detectionInterval = setInterval(() => {
+                    this.detectEmotion();
+                }, 100); // 10 FPS
+                
+                this.emotionText.textContent = 'Đang phân tích...';
+                this.emotionConfidence.textContent = 'Hãy nhìn vào camera';
+            }
+            
+            stop() {
+                this.isRunning = false;
+                this.startBtn.disabled = false;
+                this.stopBtn.disabled = true;
+                
+                if (this.detectionInterval) {
+                    clearInterval(this.detectionInterval);
+                    this.detectionInterval = null;
+                }
+                
+                // Xóa canvas
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                this.updateStatus('⏹️ Đã dừng nhận diện', 'success');
+                
+                this.emotionEmoji.textContent = '⏸️';
+                this.emotionText.textContent = 'Đã dừng';
+                this.emotionConfidence.textContent = 'Nhấn "Bắt Đầu" để tiếp tục';
+            }
+            
+            async detectEmotion() {
+                try {
+                    if (!this.video.videoWidth || !this.video.videoHeight) {
+                        return;
+                    }
+                    
+                    const detections = await faceapi
+                        .detectAllFaces(this.video, new faceapi.TinyFaceDetectorOptions())
+                        .withFaceExpressions();
+                    
+                    // Xóa canvas
+                    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                    
+                    if (detections.length > 0) {
+                        // Vẽ khung phát hiện khuôn mặt
+                        const detection = detections[0];
+                        const box = detection.detection.box;
+                        
+                        this.ctx.strokeStyle = '#00ff00';
+                        this.ctx.lineWidth = 3;
+                        this.ctx.strokeRect(box.x, box.y, box.width, box.height);
+                        
+                        // Lấy cảm xúc chủ đạo
+                        const expressions = detection.expressions;
+                        const maxExpression = Object.keys(expressions).reduce((a, b) => 
+                            expressions[a] > expressions[b] ? a : b
+                        );
+                        
+                        const confidence = Math.round(expressions[maxExpression] * 100);
+                        
+                        this.updateEmotionDisplay(maxExpression, confidence);
+                        
+                    } else {
+                        // Không phát hiện khuôn mặt
+                        this.emotionEmoji.textContent = '🔍';
+                        this.emotionText.textContent = 'Tìm kiếm khuôn mặt...';
+                        this.emotionConfidence.textContent = 'Hãy nhìn thẳng vào camera';
+                    }
+                    
+                } catch (error) {
+                    console.error('Lỗi detection:', error);
+                }
+            }
+            
+            updateEmotionDisplay(emotion, confidence) {
+                const emotionMap = {
+                    'neutral': { emoji: '😐', text: 'Bình thường' },
+                    'happy': { emoji: '😊', text: 'Vui vẻ' },
+                    'sad': { emoji: '😢', text: 'Buồn bã' },
+                    'angry': { emoji: '😠', text: 'Tức giận' },
+                    'fearful': { emoji: '😨', text: 'Sợ hãi' },
+                    'disgusted': { emoji: '🤢', text: 'Ghê tởm' },
+                    'surprised': { emoji: '😲', text: 'Ngạc nhiên' }
+                };
+                
+                const emotionData = emotionMap[emotion] || { emoji: '🤖', text: emotion };
+                
+                this.emotionEmoji.textContent = emotionData.emoji;
+                this.emotionText.textContent = emotionData.text;
+                this.emotionConfidence.textContent = `Độ tin cậy: ${confidence}%`;
+            }
+            
+            updateStatus(message, type) {
+                this.status.textContent = message;
+                this.status.className = `status ${type}`;
+            }
+            
+            showDebugInfo() {
+                const info = [
+                    `🔍 Debug Information:`,
+                    ``,
+                    `📚 Libraries:`,
+                    `- Face-API: ${typeof faceapi !== 'undefined' ? '✅ Loaded' : '❌ Not loaded'}`,
+                    `- TensorFlow: ${typeof tf !== 'undefined' ? '✅ Loaded' : '❌ Not loaded'}`,
+                    ``,
+                    `🎥 Camera:`,
+                    `- Stream: ${this.stream ? '✅ Active' : '❌ Not active'}`,
+                    `- Video dimensions: ${this.video.videoWidth}x${this.video.videoHeight}`,
+                    `- Camera ready: ${this.cameraReady ? '✅ Yes' : '❌ No'}`,
+                    ``,
+                    `🧠 AI Models:`,
+                    `- Models loaded: ${this.modelsLoaded ? '✅ Yes' : '❌ No'}`,
+                    `- TinyFaceDetector: ${faceapi?.nets?.tinyFaceDetector?.isLoaded ? '✅ Loaded' : '❌ Not loaded'}`,
+                    `- FaceExpression: ${faceapi?.nets?.faceExpressionNet?.isLoaded ? '✅ Loaded' : '❌ Not loaded'}`,
+                    ``,
+                    `🌐 Browser:`,
+                    `- Online: ${navigator.onLine ? '✅ Yes' : '❌ No'}`,
+                    `- MediaDevices: ${navigator.mediaDevices ? '✅ Supported' : '❌ Not supported'}`,
+                    `- getUserMedia: ${navigator.mediaDevices?.getUserMedia ? '✅ Supported' : '❌ Not supported'}`,
+                    ``,
+                    `⚡ Status:`,
+                    `- Running: ${this.isRunning ? '✅ Yes' : '❌ No'}`,
+                    `- Detection interval: ${this.detectionInterval ? '✅ Active' : '❌ Inactive'}`
+                ].join('\n');
+                
+                this.debugInfo.textContent = info;
+                this.debugInfo.style.display = this.debugInfo.style.display === 'none' ? 'block' : 'none';
+                
+                console.group('🔍 DEBUG INFO');
+                console.log('Face-API:', typeof faceapi !== 'undefined');
+                console.log('Stream:', this.stream);
+                console.log('Video dimensions:', this.video.videoWidth, 'x', this.video.videoHeight);
+                console.log('Models loaded:', this.modelsLoaded);
+                console.log('Camera ready:', this.cameraReady);
+                console.log('Running:', this.isRunning);
+                console.groupEnd();
+            }
+        }
+        
+        // Khởi tạo app khi DOM sẵn sàng
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🔄 DOM loaded, initializing app...');
+            window.app = new EmotionDetectionApp();
+        });
+        
+        // Error handler
+        window.addEventListener('error', (e) => {
+            console.error('Global error:', e.error);
+        });
+        
+        // Unhandled promise rejection handler
+        window.addEventListener('unhandledrejection', (e) => {
+            console.error('Unhandled promise rejection:', e.reason);
+        });
+    </script>
+</body>
+</html>

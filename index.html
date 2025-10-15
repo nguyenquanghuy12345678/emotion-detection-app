@@ -131,6 +131,76 @@
     <!-- CSS -->
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/productivity.css">
+    
+    <!-- Additional CSS for camera fixes -->
+    <style>
+        .debug-panel {
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        
+        .debug-content {
+            background: #fff;
+            padding: 15px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .controls button {
+            margin: 5px;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            background: #007bff;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .controls button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        .controls button:hover:not(:disabled) {
+            background: #0056b3;
+        }
+        
+        #cameraStatus.stat-value {
+            font-weight: bold;
+        }
+        
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .status.loading {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
 </head>
 <body>
     <!-- Navigation Tabs -->
@@ -196,6 +266,10 @@
 
         <!-- Control Buttons -->
         <div class="controls">
+            <button id="setupBtn">
+                <span class="btn-icon">📹</span>
+                <span class="btn-text">Thiết lập Camera</span>
+            </button>
             <button id="startBtn" disabled>
                 <span class="btn-icon">▶️</span>
                 <span class="btn-text">Bắt Đầu</span>
@@ -203,6 +277,10 @@
             <button id="stopBtn" disabled>
                 <span class="btn-icon">⏹️</span>
                 <span class="btn-text">Dừng Lại</span>
+            </button>
+            <button id="debugBtn">
+                <span class="btn-icon">🔍</span>
+                <span class="btn-text">Debug</span>
             </button>
         </div>
 
@@ -223,6 +301,16 @@
                 <span class="stat-label">Độ chính xác:</span>
                 <span id="confidence" class="stat-value">0%</span>
             </div>
+            <div class="stat-item">
+                <span class="stat-label">Camera:</span>
+                <span id="cameraStatus" class="stat-value">Chưa thiết lập</span>
+            </div>
+        </div>
+        
+        <!-- Debug Info Panel (Hidden by default) -->
+        <div id="debugPanel" class="debug-panel" style="display: none;">
+            <h3>🔍 Thông tin Debug</h3>
+            <div id="debugContent" class="debug-content"></div>
         </div>
 
         <!-- ============================================
@@ -468,6 +556,239 @@
                 e.preventDefault();
                 return false;
             }
+        });
+    </script>
+    
+    <!-- Camera Fix Script -->
+    <script>
+        // Camera Management Class for fixing camera issues
+        class CameraManager {
+            constructor() {
+                console.log('🎥 Khởi tạo Camera Manager...');
+                this.stream = null;
+                this.video = document.getElementById('video');
+                this.canvas = document.getElementById('canvas');
+                this.ctx = this.canvas ? this.canvas.getContext('2d') : null;
+                this.isSetup = false;
+                
+                this.setupBtn = document.getElementById('setupBtn');
+                this.debugBtn = document.getElementById('debugBtn');
+                
+                if (this.setupBtn) {
+                    this.setupBtn.addEventListener('click', () => this.setupCamera());
+                }
+                
+                if (this.debugBtn) {
+                    this.debugBtn.addEventListener('click', () => this.showDebugInfo());
+                }
+            }
+            
+            async setupCamera() {
+                try {
+                    console.log('📹 Bắt đầu thiết lập camera...');
+                    
+                    // Update status
+                    const statusText = document.getElementById('statusText');
+                    if (statusText) {
+                        statusText.textContent = '📹 Đang truy cập camera...';
+                    }
+                    
+                    // Stop existing stream
+                    if (this.stream) {
+                        console.log('🛑 Dừng stream cũ...');
+                        this.stream.getTracks().forEach(track => {
+                            console.log(`Stopping ${track.kind} track`);
+                            track.stop();
+                        });
+                        this.stream = null;
+                    }
+                    
+                    // Check camera support
+                    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                        throw new Error('Trình duyệt không hỗ trợ camera API');
+                    }
+                    
+                    console.log('🔍 Yêu cầu quyền camera...');
+                    
+                    // Camera constraints
+                    const constraints = {
+                        video: {
+                            width: { ideal: 640, max: 1280 },
+                            height: { ideal: 480, max: 720 },
+                            facingMode: 'user'
+                        },
+                        audio: false
+                    };
+                    
+                    // Get camera stream
+                    this.stream = await navigator.mediaDevices.getUserMedia(constraints);
+                    console.log('✅ Đã có quyền camera');
+                    
+                    // Set video source
+                    if (this.video) {
+                        this.video.srcObject = this.stream;
+                        
+                        // Wait for video metadata
+                        await new Promise((resolve, reject) => {
+                            const timeout = setTimeout(() => {
+                                reject(new Error('Video loading timeout'));
+                            }, 10000);
+                            
+                            this.video.onloadedmetadata = () => {
+                                clearTimeout(timeout);
+                                console.log(`Video kích thước: ${this.video.videoWidth}x${this.video.videoHeight}`);
+                                
+                                // Set canvas size
+                                if (this.canvas) {
+                                    this.canvas.width = this.video.videoWidth;
+                                    this.canvas.height = this.video.videoHeight;
+                                }
+                                
+                                // Play video
+                                this.video.play().then(() => {
+                                    console.log('✅ Video đang phát');
+                                    resolve();
+                                }).catch(reject);
+                            };
+                            
+                            this.video.onerror = (e) => {
+                                clearTimeout(timeout);
+                                reject(new Error('Video loading error'));
+                            };
+                        });
+                    }
+                    
+                    this.isSetup = true;
+                    
+                    // Update UI
+                    if (statusText) {
+                        statusText.textContent = '✅ Camera sẵn sàng!';
+                    }
+                    
+                    // Update camera status
+                    const cameraStatus = document.getElementById('cameraStatus');
+                    if (cameraStatus) {
+                        cameraStatus.textContent = '✅ Sẵn sàng';
+                        cameraStatus.style.color = '#28a745';
+                    }
+                    
+                    // Enable start button
+                    const startBtn = document.getElementById('startBtn');
+                    if (startBtn) {
+                        startBtn.disabled = false;
+                    }
+                    
+                    // Update emotion display
+                    const emotionText = document.getElementById('emotionText');
+                    const emotionMessage = document.getElementById('emotionMessage');
+                    if (emotionText) emotionText.textContent = 'Camera sẵn sàng';
+                    if (emotionMessage) emotionMessage.textContent = 'Nhấn "Bắt Đầu" để nhận diện cảm xúc';
+                    
+                    if (this.setupBtn) {
+                        this.setupBtn.innerHTML = '<span class="btn-icon">🔄</span><span class="btn-text">Thiết lập lại</span>';
+                    }
+                    
+                    console.log('✅ Camera setup hoàn tất!');
+                    
+                } catch (error) {
+                    console.error('❌ Lỗi camera:', error);
+                    
+                    // Update status
+                    const statusText = document.getElementById('statusText');
+                    if (statusText) {
+                        statusText.textContent = '❌ Lỗi camera: ' + error.message;
+                    }
+                    
+                    // Update camera status
+                    const cameraStatus = document.getElementById('cameraStatus');
+                    if (cameraStatus) {
+                        cameraStatus.textContent = '❌ Lỗi';
+                        cameraStatus.style.color = '#dc3545';
+                    }
+                    
+                    // Update emotion display
+                    const emotionEmoji = document.getElementById('emotionEmoji');
+                    const emotionText = document.getElementById('emotionText');
+                    const emotionMessage = document.getElementById('emotionMessage');
+                    
+                    if (emotionEmoji) emotionEmoji.textContent = '📹';
+                    if (emotionText) emotionText.textContent = 'Lỗi camera';
+                    
+                    // Specific error messages
+                    let errorMsg = error.message;
+                    if (error.name === 'NotAllowedError') {
+                        errorMsg = 'Vui lòng cho phép truy cập camera';
+                    } else if (error.name === 'NotFoundError') {
+                        errorMsg = 'Không tìm thấy camera';
+                    } else if (error.name === 'NotReadableError') {
+                        errorMsg = 'Camera đang được sử dụng bởi ứng dụng khác';
+                    }
+                    
+                    if (emotionMessage) emotionMessage.textContent = errorMsg;
+                    
+                    // Show alert with instructions
+                    alert(`❌ Lỗi camera: ${errorMsg}\n\n💡 Hướng dẫn khắc phục:\n• Cho phép truy cập camera khi trình duyệt hỏi\n• Kiểm tra camera có được kết nối không\n• Đóng các ứng dụng khác đang sử dụng camera\n• Thử tải lại trang`);
+                }
+            }
+            
+            showDebugInfo() {
+                const info = [
+                    '🔍 CAMERA DEBUG INFO:',
+                    '====================',
+                    '',
+                    '📱 Browser Support:',
+                    `- MediaDevices: ${navigator.mediaDevices ? '✅' : '❌'}`,
+                    `- getUserMedia: ${navigator.mediaDevices?.getUserMedia ? '✅' : '❌'}`,
+                    `- Online: ${navigator.onLine ? '✅' : '❌'}`,
+                    '',
+                    '🎥 Camera Status:',
+                    `- Stream active: ${this.stream ? '✅' : '❌'}`,
+                    `- Setup complete: ${this.isSetup ? '✅' : '❌'}`,
+                    '',
+                    '📺 Video Element:',
+                    `- Video width: ${this.video?.videoWidth || 'N/A'}`,
+                    `- Video height: ${this.video?.videoHeight || 'N/A'}`,
+                    `- Ready state: ${this.video?.readyState || 'N/A'}`,
+                    `- Paused: ${this.video?.paused ? '❌' : '✅'}`,
+                    '',
+                    '🎨 Canvas Element:',
+                    `- Canvas width: ${this.canvas?.width || 'N/A'}`,
+                    `- Canvas height: ${this.canvas?.height || 'N/A'}`,
+                    `- Context: ${this.ctx ? '✅' : '❌'}`,
+                    '',
+                    '🔧 Actions:',
+                    '• Nhấn "Thiết lập Camera" để khởi động lại',
+                    '• Kiểm tra Console (F12) để xem log chi tiết',
+                    '• Thử trình duyệt khác nếu cần'
+                ].join('\n');
+                
+                alert(info);
+                
+                // Log to console
+                console.group('🎥 CAMERA DEBUG');
+                console.log('Stream:', this.stream);
+                console.log('Setup:', this.isSetup);
+                console.log('Video element:', this.video);
+                console.log('Canvas element:', this.canvas);
+                console.log('MediaDevices support:', !!navigator.mediaDevices);
+                console.groupEnd();
+            }
+            
+            // Method to get current status
+            getStatus() {
+                return {
+                    hasStream: !!this.stream,
+                    isSetup: this.isSetup,
+                    videoReady: this.video && this.video.readyState >= 2,
+                    canvasReady: !!this.canvas && !!this.ctx
+                };
+            }
+        }
+        
+        // Initialize Camera Manager
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🔧 Initializing Camera Manager...');
+            window.cameraManager = new CameraManager();
         });
     </script>
     
