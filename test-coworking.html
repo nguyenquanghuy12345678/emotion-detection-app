@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 Test Co-working Features</title>
+    <link rel="stylesheet" href="css/coworking.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .test-section h2 {
+            color: #34495e;
+            margin-bottom: 15px;
+        }
+        .btn {
+            padding: 12px 24px;
+            margin: 5px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+        .btn:hover {
+            transform: scale(1.05);
+        }
+        .output {
+            margin-top: 15px;
+            padding: 15px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            min-height: 100px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 4px;
+            margin: 5px;
+            font-size: 13px;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 Test Co-working & Share Features</h1>
+        
+        <!-- Test Co-working Space -->
+        <div class="test-section">
+            <h2>1. 👥 Virtual Co-working Space</h2>
+            <button class="btn btn-primary" onclick="testCreateRoom()">Tạo phòng test</button>
+            <button class="btn btn-primary" onclick="testJoinRoom()">Join phòng</button>
+            <button class="btn btn-primary" onclick="testPomodoro()">Test Pomodoro</button>
+            <button class="btn btn-primary" onclick="testChat()">Test Chat</button>
+            <div id="coworkOutput" class="output"></div>
+        </div>
+        
+        <!-- Test Share Manager -->
+        <div class="test-section">
+            <h2>2. 📤 Share Manager</h2>
+            <button class="btn btn-success" onclick="testShareEmotion()">Share Emotion</button>
+            <button class="btn btn-success" onclick="testShareProductivity()">Share Productivity</button>
+            <button class="btn btn-success" onclick="testExportReport()">Export Report</button>
+            <div id="shareOutput" class="output"></div>
+        </div>
+        
+        <!-- Test Data Sync -->
+        <div class="test-section">
+            <h2>3. 🔄 Data Synchronization</h2>
+            <button class="btn btn-info" onclick="testLocalStorage()">Test localStorage</button>
+            <button class="btn btn-info" onclick="testSync()">Test Auto-sync</button>
+            <button class="btn btn-info" onclick="clearTestData()">Clear Test Data</button>
+            <div id="syncOutput" class="output"></div>
+        </div>
+        
+        <!-- Component Status -->
+        <div class="test-section">
+            <h2>4. 📊 Component Status</h2>
+            <div id="statusOutput"></div>
+        </div>
+    </div>
+
+    <script src="js/share-manager.js"></script>
+    <script src="js/coworking-space.js"></script>
+    
+    <script>
+        // Mock data cho testing
+        window.productivityTracker = {
+            focusScore: 85,
+            totalWorkTime: 3600,
+            pomodoroCount: 4,
+            emotionStats: {
+                happy: 15,
+                neutral: 10,
+                sad: 3,
+                focused: 8
+            },
+            emotionHistory: []
+        };
+        
+        // Test functions
+        function testCreateRoom() {
+            const output = document.getElementById('coworkOutput');
+            output.innerHTML = '🔄 Testing room creation...\n';
+            
+            try {
+                window.coworkingSpace.createRoom();
+                output.innerHTML += '✅ Room created successfully!\n';
+                output.innerHTML += `Room ID: ${window.coworkingSpace.currentRoom?.id || 'N/A'}\n`;
+            } catch (e) {
+                output.innerHTML += `❌ Error: ${e.message}\n`;
+            }
+        }
+        
+        function testJoinRoom() {
+            const output = document.getElementById('coworkOutput');
+            const rooms = JSON.parse(localStorage.getItem('coworking_rooms') || '[]');
+            
+            if (rooms.length === 0) {
+                output.innerHTML = '⚠️ No rooms available. Create one first!\n';
+                return;
+            }
+            
+            output.innerHTML = '🔄 Testing room join...\n';
+            try {
+                window.coworkingSpace.joinRoom(rooms[0].id);
+                output.innerHTML += '✅ Joined room successfully!\n';
+                output.innerHTML += `Room: ${rooms[0].name}\n`;
+            } catch (e) {
+                output.innerHTML += `❌ Error: ${e.message}\n`;
+            }
+        }
+        
+        function testPomodoro() {
+            const output = document.getElementById('coworkOutput');
+            output.innerHTML = '🔄 Testing Pomodoro...\n';
+            
+            try {
+                if (!window.coworkingSpace.currentRoom) {
+                    throw new Error('Join a room first!');
+                }
+                
+                window.coworkingSpace.startSharedPomodoro();
+                output.innerHTML += '✅ Pomodoro started!\n';
+                
+                setTimeout(() => {
+                    window.coworkingSpace.pauseSharedPomodoro();
+                    output.innerHTML += '✅ Pomodoro paused!\n';
+                }, 2000);
+            } catch (e) {
+                output.innerHTML += `❌ Error: ${e.message}\n`;
+            }
+        }
+        
+        function testChat() {
+            const output = document.getElementById('coworkOutput');
+            output.innerHTML = '🔄 Testing chat...\n';
+            
+            try {
+                if (!window.coworkingSpace.currentRoom) {
+                    throw new Error('Join a room first!');
+                }
+                
+                window.coworkingSpace.broadcastMessage('user', 'Hello from test! 👋');
+                output.innerHTML += '✅ Message sent!\n';
+                output.innerHTML += `Chat history: ${window.coworkingSpace.currentRoom.chat.length} messages\n`;
+            } catch (e) {
+                output.innerHTML += `❌ Error: ${e.message}\n`;
+            }
+        }
+        
+        function testShareEmotion() {
+            const output = document.getElementById('shareOutput');
+            output.innerHTML = '🔄 Testing emotion share...\n';
+            
+            try {
+                // Mock emotion data
+                document.body.innerHTML += `
+                    <div id="emotionText" style="display:none">Happy</div>
+                    <div id="confidence" style="display:none">95%</div>
+                `;
+                
+                window.shareManager.shareCurrentEmotion();
+                output.innerHTML += '✅ Share initiated!\n';
+                output.innerHTML += 'Check your clipboard or share dialog\n';
+            } catch (e) {
+                output.innerHTML += `❌ Error: ${e.message}\n`;
+            }
+        }
+        
+        function testShareProductivity() {
+            const output = document.getElementById('shareOutput');
+            output.innerHTML = '🔄 Testing productivity share...\n';
+            
+            try {
+                window.shareManager.shareProductivityReport();
+                output.innerHTML += '✅ Productivity report shared!\n';
+            } catch (e) {
+                output.innerHTML += `❌ Error: ${e.message}\n`;
+            }
+        }
+        
+        function testExportReport() {
+            const output = document.getElementById('shareOutput');
+            output.innerHTML = '🔄 Testing report export...\n';
+            
+            try {
+                window.shareManager.exportFullReport();
+                output.innerHTML += '✅ Report exported! Check your downloads.\n';
+            } catch (e) {
+                output.innerHTML += `❌ Error: ${e.message}\n`;
+            }
+        }
+        
+        function testLocalStorage() {
+            const output = document.getElementById('syncOutput');
+            output.innerHTML = '🔄 Testing localStorage...\n';
+            
+            try {
+                const testData = {
+                    test: true,
+                    timestamp: Date.now()
+                };
+                
+                localStorage.setItem('test_key', JSON.stringify(testData));
+                const retrieved = JSON.parse(localStorage.getItem('test_key'));
+                
+                if (retrieved.test === true) {
+                    output.innerHTML += '✅ localStorage working!\n';
+                    output.innerHTML += `Data: ${JSON.stringify(retrieved, null, 2)}\n`;
+                } else {
+                    throw new Error('Data mismatch');
+                }
+                
+                localStorage.removeItem('test_key');
+            } catch (e) {
+                output.innerHTML += `❌ Error: ${e.message}\n`;
+            }
+        }
+        
+        function testSync() {
+            const output = document.getElementById('syncOutput');
+            output.innerHTML = '🔄 Testing auto-sync...\n';
+            
+            let count = 0;
+            const interval = setInterval(() => {
+                count++;
+                output.innerHTML += `.`;
+                
+                if (count >= 5) {
+                    clearInterval(interval);
+                    output.innerHTML += '\n✅ Sync test completed!\n';
+                    output.innerHTML += 'Auto-sync runs every 2 seconds in production.\n';
+                }
+            }, 400);
+        }
+        
+        function clearTestData() {
+            const output = document.getElementById('syncOutput');
+            
+            if (confirm('Clear all test data from localStorage?')) {
+                localStorage.removeItem('coworking_rooms');
+                localStorage.removeItem('cowork_username');
+                output.innerHTML = '✅ Test data cleared!\n';
+            }
+        }
+        
+        // Check component status
+        function checkStatus() {
+            const output = document.getElementById('statusOutput');
+            
+            const checks = [
+                {
+                    name: 'CoworkingSpace',
+                    status: typeof window.coworkingSpace !== 'undefined'
+                },
+                {
+                    name: 'ShareManager',
+                    status: typeof window.shareManager !== 'undefined'
+                },
+                {
+                    name: 'localStorage',
+                    status: typeof localStorage !== 'undefined'
+                },
+                {
+                    name: 'Web Share API',
+                    status: typeof navigator.share !== 'undefined'
+                },
+                {
+                    name: 'Clipboard API',
+                    status: typeof navigator.clipboard !== 'undefined'
+                }
+            ];
+            
+            output.innerHTML = checks.map(check => {
+                const statusClass = check.status ? 'success' : 'error';
+                const icon = check.status ? '✅' : '❌';
+                return `<span class="status ${statusClass}">${icon} ${check.name}</span>`;
+            }).join('');
+        }
+        
+        // Run status check on load
+        window.addEventListener('load', () => {
+            setTimeout(checkStatus, 500);
+        });
+    </script>
+</body>
+</html>

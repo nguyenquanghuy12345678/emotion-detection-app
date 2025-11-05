@@ -1592,5 +1592,63 @@
             }
         });
     </script>
+    
+    <!-- Virtual Co-working Space -->
+    <link rel="stylesheet" href="css/coworking.css">
+    <script src="js/share-manager.js"></script>
+    <script src="js/coworking-space.js"></script>
+    
+    <!-- Add Share Buttons to existing features -->
+    <script>
+        // Add share button to productivity tab
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                // Share Emotion Button
+                const emotionDisplay = document.getElementById('emotionDisplay');
+                if (emotionDisplay) {
+                    const shareEmotionBtn = document.createElement('button');
+                    shareEmotionBtn.className = 'btn-share';
+                    shareEmotionBtn.innerHTML = '🔗 Chia sẻ cảm xúc';
+                    shareEmotionBtn.onclick = () => window.shareManager.shareCurrentEmotion();
+                    shareEmotionBtn.style.cssText = 'margin-top: 10px; padding: 8px 16px; background: #3498db; color: white; border: none; border-radius: 6px; cursor: pointer;';
+                    emotionDisplay.appendChild(shareEmotionBtn);
+                }
+                
+                // Share Productivity Button
+                const productivityTab = document.getElementById('productivityTab');
+                if (productivityTab) {
+                    const shareSection = document.createElement('div');
+                    shareSection.className = 'section-card';
+                    shareSection.style.cssText = 'margin-top: 20px;';
+                    shareSection.innerHTML = `
+                        <h3>📤 Chia Sẻ & Xuất</h3>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px;">
+                            <button onclick="window.shareManager.shareProductivityReport()" 
+                                    style="padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                                🔗 Chia sẻ năng suất
+                            </button>
+                            <button onclick="window.shareManager.exportFullReport()" 
+                                    style="padding: 10px 20px; background: #9b59b6; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                                📊 Xuất báo cáo đầy đủ
+                            </button>
+                            <button onclick="window.shareManager.shareToTwitter('Báo cáo năng suất của tôi hôm nay! #Productivity')" 
+                                    style="padding: 10px 20px; background: #1DA1F2; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                                🐦 Twitter
+                            </button>
+                            <button onclick="window.shareManager.shareToFacebook()" 
+                                    style="padding: 10px 20px; background: #4267B2; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                                📘 Facebook
+                            </button>
+                            <button onclick="window.shareManager.shareToLinkedIn()" 
+                                    style="padding: 10px 20px; background: #0077B5; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                                💼 LinkedIn
+                            </button>
+                        </div>
+                    `;
+                    productivityTab.appendChild(shareSection);
+                }
+            }, 2000);
+        });
+    </script>
 </body>
 </html>

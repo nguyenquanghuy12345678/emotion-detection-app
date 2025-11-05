@@ -1,0 +1,626 @@
+/* ===========================
+   VIRTUAL CO-WORKING SPACE
+   =========================== */
+
+.coworking-layout {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 20px;
+    height: calc(100vh - 200px);
+}
+
+.coworking-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    overflow-y: auto;
+}
+
+.coworking-main {
+    overflow-y: auto;
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 20px;
+}
+
+/* ========== NO ROOM SELECTED ========== */
+.no-room {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+.empty-state {
+    text-align: center;
+    color: #999;
+}
+
+.empty-icon {
+    font-size: 80px;
+    margin-bottom: 20px;
+}
+
+.empty-state h2 {
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.empty-state p {
+    max-width: 400px;
+    line-height: 1.6;
+}
+
+/* ========== ROOMS LIST ========== */
+.rooms-list {
+    margin-top: 15px;
+}
+
+.room-item {
+    padding: 12px;
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.room-item:hover {
+    border-color: #3498db;
+    background: #f0f8ff;
+    transform: translateX(5px);
+}
+
+.room-name {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.room-meta {
+    font-size: 13px;
+    color: #999;
+}
+
+/* ========== MY STATUS ========== */
+.my-status {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.my-status input,
+.my-status select {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.my-status input:focus,
+.my-status select:focus {
+    outline: none;
+    border-color: #3498db;
+}
+
+.emotion-badge {
+    padding: 10px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    text-align: center;
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+/* ========== ROOM ACTIVE ========== */
+.room-active {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.room-header {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.room-info h2 {
+    margin: 0;
+    color: #2c3e50;
+}
+
+.member-count {
+    font-size: 14px;
+    color: #999;
+}
+
+.room-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-icon {
+    background: white;
+    border: 2px solid #3498db;
+    color: #3498db;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 18px;
+    transition: all 0.3s;
+}
+
+.btn-icon:hover {
+    background: #3498db;
+    color: white;
+}
+
+/* ========== SHARED POMODORO ========== */
+.shared-pomodoro {
+    text-align: center;
+}
+
+.timer-display {
+    font-size: 64px;
+    font-weight: bold;
+    color: #e74c3c;
+    font-family: 'Courier New', monospace;
+    margin: 20px 0;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+}
+
+.session-info {
+    font-size: 18px;
+    color: #7f8c8d;
+    margin-bottom: 20px;
+}
+
+.pomodoro-controls {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.pomodoro-controls button {
+    padding: 12px 24px;
+    font-size: 16px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.pomodoro-controls button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pomodoro-controls button:hover:not(:disabled) {
+    transform: scale(1.05);
+}
+
+/* ========== MEMBERS GRID ========== */
+.members-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 15px;
+}
+
+.member-card {
+    background: white;
+    padding: 15px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    border: 2px solid transparent;
+    transition: all 0.3s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.member-card.me {
+    border-color: #3498db;
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+}
+
+.member-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.member-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.member-info {
+    flex: 1;
+}
+
+.member-name {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 5px;
+}
+
+.member-status {
+    font-size: 13px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    display: inline-block;
+    margin-bottom: 3px;
+}
+
+.member-status.focus {
+    background: #d4edda;
+    color: #155724;
+}
+
+.member-status.break {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.member-status.available {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.member-status.busy {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.member-emotion {
+    font-size: 12px;
+    color: #666;
+}
+
+/* ========== GROUP STATS ========== */
+.group-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.stat-item label {
+    width: 180px;
+    font-weight: 600;
+    color: #555;
+}
+
+.stat-bar {
+    flex: 1;
+    height: 30px;
+    background: #e0e0e0;
+    border-radius: 15px;
+    overflow: hidden;
+    position: relative;
+}
+
+.stat-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    transition: width 0.5s ease;
+}
+
+.stat-value {
+    font-weight: bold;
+    color: #2c3e50;
+    min-width: 60px;
+    text-align: right;
+}
+
+/* ========== GROUP CHAT ========== */
+.group-chat {
+    max-height: 300px;
+    overflow-y: auto;
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #e0e0e0;
+}
+
+.chat-message {
+    margin-bottom: 15px;
+    padding: 10px;
+    border-radius: 8px;
+}
+
+.chat-message.system {
+    background: #f0f0f0;
+    color: #666;
+    text-align: center;
+    font-style: italic;
+    padding: 8px;
+}
+
+.chat-message.my-message {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    margin-left: 20%;
+}
+
+.chat-message.peer-message {
+    background: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    margin-right: 20%;
+}
+
+.message-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+    font-size: 13px;
+}
+
+.message-header strong {
+    font-weight: 600;
+}
+
+.message-header span {
+    opacity: 0.7;
+}
+
+.message-content {
+    line-height: 1.5;
+}
+
+.chat-input {
+    display: flex;
+    gap: 10px;
+}
+
+.chat-input input {
+    flex: 1;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.chat-input input:focus {
+    outline: none;
+    border-color: #3498db;
+}
+
+.chat-input button {
+    padding: 12px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.3s;
+}
+
+.chat-input button:hover {
+    transform: scale(1.05);
+}
+
+/* ========== ACCOUNTABILITY ========== */
+.accountability-section {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.accountability-section input {
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.accountability-section button {
+    padding: 12px;
+    background: #28a745;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.accountability-section button:hover {
+    background: #218838;
+    transform: scale(1.02);
+}
+
+.goals-board {
+    margin-top: 15px;
+}
+
+.goal-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    transition: all 0.3s;
+}
+
+.goal-item:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.goal-item.completed {
+    opacity: 0.6;
+    background: #f0f0f0;
+}
+
+.goal-item.completed .goal-text {
+    text-decoration: line-through;
+}
+
+.goal-item input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+.goal-content {
+    flex: 1;
+}
+
+.goal-text {
+    font-weight: 500;
+    color: #2c3e50;
+    margin-bottom: 3px;
+}
+
+.goal-meta {
+    font-size: 12px;
+    color: #999;
+}
+
+/* ========== BUTTONS ========== */
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.btn-primary:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.btn-danger {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.btn-danger:hover {
+    background: #c0392b;
+}
+
+.full-width {
+    width: 100%;
+}
+
+/* ========== NOTIFICATIONS ========== */
+.cowork-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #28a745;
+    color: white;
+    padding: 15px 25px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    z-index: 10000;
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: all 0.3s;
+}
+
+.cowork-notification.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 992px) {
+    .coworking-layout {
+        grid-template-columns: 1fr;
+    }
+    
+    .coworking-sidebar {
+        max-height: 300px;
+    }
+    
+    .members-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 576px) {
+    .room-header {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .timer-display {
+        font-size: 48px;
+    }
+    
+    .pomodoro-controls {
+        flex-direction: column;
+    }
+}
+
+/* ========== ANIMATIONS ========== */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(100px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideOut {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(100px);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+.member-card.me .member-avatar {
+    animation: pulse 2s infinite;
+}
