@@ -718,6 +718,12 @@ class CoworkingSpace {
 
 // Initialize
 window.addEventListener('load', () => {
+    // Only initialize if not already done
+    if (window.coworkingSpace) {
+        console.log('⚠️ CoworkingSpace already initialized');
+        return;
+    }
+    
     window.coworkingSpace = new CoworkingSpace();
     console.log('✅ CoworkingSpace initialized');
     
@@ -727,7 +733,9 @@ window.addEventListener('load', () => {
     if (roomId) {
         setTimeout(() => {
             window.coworkingSpace.joinRoom(roomId);
-            switchTab('coworking');
+            if (typeof switchTab === 'function') {
+                switchTab('coworking');
+            }
         }, 1000);
     }
 });

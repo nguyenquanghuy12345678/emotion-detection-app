@@ -630,7 +630,15 @@ class CoworkingSpaceProduction {
     // ============= UI HELPERS =============
     
     initUI() {
-        // Same as original CoworkingSpace.initUI()
+        // Check if UI already exists (created by base CoworkingSpace class)
+        const existingTab = document.getElementById('coworkingTab');
+        
+        if (existingTab) {
+            console.log('✅ Using existing Co-working UI');
+            return;
+        }
+        
+        // Otherwise create UI (same as base class)
         const container = document.querySelector('.container');
         if (!container) return;
         
@@ -650,11 +658,126 @@ class CoworkingSpaceProduction {
         coworkDiv.style.display = 'none';
         coworkDiv.innerHTML = this.getTabHTML();
         container.appendChild(coworkDiv);
+        
+        console.log('✅ Co-working UI created');
     }
     
     getTabHTML() {
-        // Same HTML as original - reuse from coworking-space.js
-        return window.CoworkingSpace?.prototype?.getTabHTML?.call(this) || '<div>Loading...</div>';
+        // Get HTML from CoworkingSpace base class
+        if (typeof CoworkingSpace !== 'undefined' && CoworkingSpace.prototype.getTabHTML) {
+            return CoworkingSpace.prototype.getTabHTML.call(this);
+        }
+        
+        // Fallback: return basic HTML
+        return `
+            <div class="coworking-layout">
+                <div class="coworking-sidebar">
+                    <div class="section-card">
+                        <h3>🚪 Phòng Làm Việc</h3>
+                        <button onclick="window.coworkingSpace.createRoom()" class="btn-primary full-width">
+                            ➕ Tạo Phòng Mới
+                        </button>
+                        <div id="roomsList" class="rooms-list"></div>
+                    </div>
+                    
+                    <div class="section-card">
+                        <h3>👤 Trạng Thái</h3>
+                        <div class="my-status">
+                            <input type="text" id="myUsername" placeholder="Tên của bạn" 
+                                   value="${this.myName}" onchange="window.coworkingSpace.updateName(this.value)">
+                            <select id="myWorkStatus" onchange="window.coworkingSpace.updateStatus(this.value)">
+                                <option value="focus">🎯 Tập trung</option>
+                                <option value="break">☕ Nghỉ ngơi</option>
+                                <option value="available">✅ Sẵn sàng</option>
+                                <option value="busy">🔴 Bận</option>
+                            </select>
+                            <div id="myCurrentEmotion" class="emotion-badge">😊 Happy</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="coworking-main">
+                    <div id="noRoomSelected" class="no-room">
+                        <div class="empty-state">
+                            <div class="empty-icon">🏢</div>
+                            <h2>Chưa chọn phòng</h2>
+                            <p>Tạo phòng mới hoặc tham gia để bắt đầu!</p>
+                        </div>
+                    </div>
+                    
+                    <div id="roomActive" class="room-active" style="display: none;">
+                        <div class="room-header">
+                            <div class="room-info">
+                                <h2 id="roomName">Phòng Làm Việc</h2>
+                                <span id="roomMemberCount">0 thành viên</span>
+                            </div>
+                            <div class="room-actions">
+                                <button onclick="window.coworkingSpace.shareRoom()" class="btn-icon" title="Chia sẻ">🔗</button>
+                                <button onclick="window.coworkingSpace.exportRoomReport()" class="btn-icon" title="Xuất báo cáo">📊</button>
+                                <button onclick="window.coworkingSpace.leaveRoom()" class="btn-danger">🚪 Rời</button>
+                            </div>
+                        </div>
+                        
+                        <div class="section-card">
+                            <h3>🍅 Pomodoro Chung</h3>
+                            <div class="shared-pomodoro">
+                                <div id="sharedTimer" class="timer-display">25:00</div>
+                                <div id="pomodoroSession" class="session-info">Sẵn sàng</div>
+                                <div class="pomodoro-controls">
+                                    <button onclick="window.coworkingSpace.startSharedPomodoro()" id="pomodoroStartBtn">▶️</button>
+                                    <button onclick="window.coworkingSpace.pauseSharedPomodoro()" id="pomodoroPauseBtn" disabled>⏸️</button>
+                                    <button onclick="window.coworkingSpace.resetSharedPomodoro()">🔄</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="section-card">
+                            <h3>👥 Thành Viên (<span id="memberCount">0</span>)</h3>
+                            <div id="membersGrid" class="members-grid"></div>
+                        </div>
+                        
+                        <div class="section-card">
+                            <h3>📊 Thống Kê Nhóm</h3>
+                            <div class="group-stats">
+                                <div class="stat-item">
+                                    <label>Điểm tập trung TB:</label>
+                                    <div class="stat-bar">
+                                        <div id="groupFocusBar" class="stat-fill" style="width: 0%"></div>
+                                    </div>
+                                    <span id="groupFocusScore">0%</span>
+                                </div>
+                                <div class="stat-item">
+                                    <label>Pomodoro hoàn thành:</label>
+                                    <span id="groupPomodoroCount" class="stat-value">0</span>
+                                </div>
+                                <div class="stat-item">
+                                    <label>Thời gian làm việc:</label>
+                                    <span id="groupWorkTime" class="stat-value">0h 0m</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="section-card">
+                            <h3>💬 Chat Nhóm</h3>
+                            <div id="groupChat" class="group-chat"></div>
+                            <div class="chat-input">
+                                <input type="text" id="chatInput" placeholder="Nhập tin nhắn..." onkeypress="if(event.key==='Enter') window.coworkingSpace.sendMessage()">
+                                <button onclick="window.coworkingSpace.sendMessage()">📤</button>
+                            </div>
+                        </div>
+                        
+                        <div class="section-card">
+                            <h3>🎯 Mục Tiêu & Trách Nhiệm</h3>
+                            <div class="accountability-section">
+                                <input type="text" id="myGoalInput" placeholder="Mục tiêu của bạn hôm nay...">
+                                <button onclick="window.coworkingSpace.setGoal()">✅ Đặt mục tiêu</button>
+                                <div id="goalsBoard" class="goals-board"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
     }
     
     showCoworkingTab() {
@@ -743,16 +866,45 @@ class CoworkingSpaceProduction {
 
 // Use production or development version
 window.addEventListener('load', () => {
-    // Check if we should use production API
+    // Prevent duplicate initialization
+    if (window.coworkingSpace) {
+        console.log('⚠️ CoworkingSpace already exists');
+        
+        // Check if we should upgrade to production
+        const useProductionAPI = window.location.protocol === 'https:' || 
+                                window.location.hostname !== 'localhost';
+        
+        if (useProductionAPI && typeof CoworkingSpaceProduction !== 'undefined') {
+            console.log('🔄 Upgrading to Production API version...');
+            
+            // Save current room if any
+            const currentRoom = window.coworkingSpace.currentRoom;
+            
+            // Replace with production version (inherits base class UI)
+            const productionInstance = new CoworkingSpaceProduction();
+            
+            // Restore room
+            if (currentRoom) {
+                productionInstance.currentRoom = currentRoom;
+            }
+            
+            window.coworkingSpace = productionInstance;
+            console.log('✅ Upgraded to CoworkingSpace (Production API)');
+        }
+        
+        return;
+    }
+    
+    // First time initialization
     const useProductionAPI = window.location.protocol === 'https:' || 
                             window.location.hostname !== 'localhost';
     
     if (useProductionAPI && typeof CoworkingSpaceProduction !== 'undefined') {
         window.coworkingSpace = new CoworkingSpaceProduction();
-        console.log('✅ CoworkingSpace (Production) initialized');
+        console.log('✅ CoworkingSpace (Production API) initialized');
     } else if (typeof CoworkingSpace !== 'undefined') {
         window.coworkingSpace = new CoworkingSpace();
-        console.log('✅ CoworkingSpace (Development) initialized');
+        console.log('✅ CoworkingSpace (localStorage) initialized');
     }
     
     // Check URL for room parameter
