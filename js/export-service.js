@@ -41,21 +41,28 @@ class ExportService {
         // Initialize jsPDF - UMD module uses window.jspdf.jsPDF
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
+        
+        // Add Unicode support for Vietnamese
+        // Using Helvetica which has better Unicode support
+        doc.setFont('helvetica');
+        
         let yPosition = 20;
 
         // ===== HEADER =====
-        doc.setFontSize(20);
-        doc.setFont(undefined, 'bold');
+        doc.setFontSize(22);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(44, 62, 80);
         doc.text(title, 105, yPosition, { align: 'center' });
-        yPosition += 10;
+        yPosition += 12;
 
-        doc.setFontSize(10);
-        doc.setFont(undefined, 'normal');
-        doc.text(`Người dùng: ${userName}`, 105, yPosition, { align: 'center' });
-        yPosition += 5;
-        doc.text(`Khoảng thời gian: ${dateRange}`, 105, yPosition, { align: 'center' });
-        yPosition += 5;
-        doc.text(`Ngày xuất: ${new Date().toLocaleString('vi-VN')}`, 105, yPosition, { align: 'center' });
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(52, 73, 94);
+        doc.text('Nguoi dung: ' + userName, 105, yPosition, { align: 'center' });
+        yPosition += 6;
+        doc.text('Khoang thoi gian: ' + dateRange, 105, yPosition, { align: 'center' });
+        yPosition += 6;
+        doc.text('Ngay xuat: ' + new Date().toLocaleDateString('vi-VN') + ' ' + new Date().toLocaleTimeString('vi-VN'), 105, yPosition, { align: 'center' });
         yPosition += 15;
 
         // ===== LINE SEPARATOR =====
@@ -64,9 +71,10 @@ class ExportService {
         yPosition += 10;
 
         // ===== SUMMARY STATISTICS =====
-        doc.setFontSize(14);
-        doc.setFont(undefined, 'bold');
-        doc.text('📊 Tổng Quan Thống Kê', 10, yPosition);
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(41, 128, 185);
+        doc.text('Tong Quan Thong Ke', 10, yPosition);
         yPosition += 8;
 
         const summaryData = [
@@ -80,12 +88,28 @@ class ExportService {
 
         doc.autoTable({
             startY: yPosition,
-            head: [['Chỉ số', 'Giá trị']],
+            head: [['Chi so', 'Gia tri']],
             body: summaryData,
             theme: 'grid',
-            headStyles: { fillColor: [76, 175, 80] },
-            styles: { fontSize: 10, font: 'helvetica' },
-            margin: { left: 10, right: 10 }
+            headStyles: { 
+                fillColor: [41, 128, 185],
+                textColor: [255, 255, 255],
+                fontSize: 11,
+                fontStyle: 'bold',
+                halign: 'center'
+            },
+            bodyStyles: {
+                fontSize: 10,
+                textColor: [44, 62, 80]
+            },
+            alternateRowStyles: {
+                fillColor: [245, 247, 250]
+            },
+            margin: { left: 10, right: 10 },
+            columnStyles: {
+                0: { fontStyle: 'bold', cellWidth: 80 },
+                1: { halign: 'center', cellWidth: 'auto' }
+            }
         });
 
         yPosition = doc.lastAutoTable.finalY + 15;
@@ -97,9 +121,10 @@ class ExportService {
                 yPosition = 20;
             }
 
-            doc.setFontSize(14);
-            doc.setFont(undefined, 'bold');
-            doc.text('🎭 Phân Bố Cảm Xúc', 10, yPosition);
+            doc.setFontSize(16);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(142, 68, 173);
+            doc.text('Phan Bo Cam Xuc', 10, yPosition);
             yPosition += 8;
 
             const emotionData = Object.entries(data.emotionDistribution).map(([emotion, count]) => {
@@ -113,12 +138,29 @@ class ExportService {
 
             doc.autoTable({
                 startY: yPosition,
-                head: [['Cảm xúc', 'Số lần', 'Tỷ lệ']],
+                head: [['Cam xuc', 'So lan', 'Ty le']],
                 body: emotionData,
                 theme: 'striped',
-                headStyles: { fillColor: [33, 150, 243] },
-                styles: { fontSize: 10 },
-                margin: { left: 10, right: 10 }
+                headStyles: { 
+                    fillColor: [142, 68, 173],
+                    textColor: [255, 255, 255],
+                    fontSize: 11,
+                    fontStyle: 'bold',
+                    halign: 'center'
+                },
+                bodyStyles: {
+                    fontSize: 10,
+                    textColor: [44, 62, 80]
+                },
+                alternateRowStyles: {
+                    fillColor: [245, 247, 250]
+                },
+                margin: { left: 10, right: 10 },
+                columnStyles: {
+                    0: { cellWidth: 80 },
+                    1: { halign: 'center', cellWidth: 40 },
+                    2: { halign: 'center', cellWidth: 40 }
+                }
             });
 
             yPosition = doc.lastAutoTable.finalY + 15;
@@ -131,9 +173,10 @@ class ExportService {
                 yPosition = 20;
             }
 
-            doc.setFontSize(14);
-            doc.setFont(undefined, 'bold');
-            doc.text('⏱️ Chi Tiết Phiên Làm Việc', 10, yPosition);
+            doc.setFontSize(16);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(230, 126, 34);
+            doc.text('Chi Tiet Phien Lam Viec', 10, yPosition);
             yPosition += 8;
 
             const sessionData = data.sessions.map((session, index) => [
@@ -146,12 +189,31 @@ class ExportService {
 
             doc.autoTable({
                 startY: yPosition,
-                head: [['Phiên', 'Thời gian bắt đầu', 'Thời lượng', 'Điểm tập trung', 'Pomodoros']],
+                head: [['Phien', 'Thoi gian bat dau', 'Thoi luong', 'Diem tap trung', 'Pomodoros']],
                 body: sessionData,
                 theme: 'grid',
-                headStyles: { fillColor: [255, 152, 0] },
-                styles: { fontSize: 9 },
-                margin: { left: 10, right: 10 }
+                headStyles: { 
+                    fillColor: [230, 126, 34],
+                    textColor: [255, 255, 255],
+                    fontSize: 10,
+                    fontStyle: 'bold',
+                    halign: 'center'
+                },
+                bodyStyles: {
+                    fontSize: 9,
+                    textColor: [44, 62, 80]
+                },
+                alternateRowStyles: {
+                    fillColor: [245, 247, 250]
+                },
+                margin: { left: 10, right: 10 },
+                columnStyles: {
+                    0: { halign: 'center', cellWidth: 20 },
+                    1: { cellWidth: 50 },
+                    2: { halign: 'center', cellWidth: 30 },
+                    3: { halign: 'center', cellWidth: 35 },
+                    4: { halign: 'center', cellWidth: 30 }
+                }
             });
 
             yPosition = doc.lastAutoTable.finalY + 15;
@@ -164,9 +226,10 @@ class ExportService {
                 yPosition = 20;
             }
 
-            doc.setFontSize(14);
-            doc.setFont(undefined, 'bold');
-            doc.text('📝 Ghi Chú Công Việc', 10, yPosition);
+            doc.setFontSize(16);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(52, 152, 219);
+            doc.text('Ghi Chu Cong Viec', 10, yPosition);
             yPosition += 8;
 
             const notesData = data.notes.slice(0, 10).map((note, index) => [
@@ -177,16 +240,28 @@ class ExportService {
 
             doc.autoTable({
                 startY: yPosition,
-                head: [['Thời gian', 'Ghi chú', 'Tập trung']],
+                head: [['Thoi gian', 'Ghi chu', 'Tap trung']],
                 body: notesData,
                 theme: 'plain',
-                headStyles: { fillColor: [156, 39, 176] },
-                styles: { fontSize: 9, cellPadding: 3 },
+                headStyles: { 
+                    fillColor: [52, 152, 219],
+                    textColor: [255, 255, 255],
+                    fontSize: 10,
+                    fontStyle: 'bold'
+                },
+                bodyStyles: {
+                    fontSize: 9,
+                    textColor: [44, 62, 80],
+                    cellPadding: 4
+                },
+                alternateRowStyles: {
+                    fillColor: [250, 252, 255]
+                },
                 margin: { left: 10, right: 10 },
                 columnStyles: {
                     0: { cellWidth: 40 },
                     1: { cellWidth: 120 },
-                    2: { cellWidth: 25 }
+                    2: { halign: 'center', cellWidth: 25 }
                 }
             });
 
@@ -201,13 +276,15 @@ class ExportService {
                 yPosition = 20;
             }
 
-            doc.setFontSize(14);
-            doc.setFont(undefined, 'bold');
-            doc.text('💡 Gợi Ý Cải Thiện', 10, yPosition);
-            yPosition += 8;
+            doc.setFontSize(16);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(46, 204, 113);
+            doc.text('Goi Y Cai Thien', 10, yPosition);
+            yPosition += 10;
 
             doc.setFontSize(10);
-            doc.setFont(undefined, 'normal');
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(52, 73, 94);
             recommendations.forEach((rec, index) => {
                 if (yPosition > 280) {
                     doc.addPage();
@@ -223,15 +300,16 @@ class ExportService {
         for (let i = 1; i <= pageCount; i++) {
             doc.setPage(i);
             doc.setFontSize(8);
-            doc.setTextColor(150);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(149, 165, 166);
             doc.text(
-                `Trang ${i} / ${pageCount}`,
+                'Trang ' + i + ' / ' + pageCount,
                 doc.internal.pageSize.getWidth() / 2,
                 doc.internal.pageSize.getHeight() - 10,
                 { align: 'center' }
             );
             doc.text(
-                'Generated by Emotion Detection & Productivity Tracker',
+                'Emotion Detection & Productivity Tracker - Bao cao tu dong',
                 105,
                 doc.internal.pageSize.getHeight() - 5,
                 { align: 'center' }

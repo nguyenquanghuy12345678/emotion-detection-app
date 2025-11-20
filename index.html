@@ -248,12 +248,12 @@
     </div>
     
     <!-- Guest Mode Bar -->
-    <div id="guestModeBar" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 12px 20px; display: none; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+    <div id="guestModeBar" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 8px 16px; display: none; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1); position: fixed; top: 0; left: 0; right: 0; z-index: 1000;">
         <div style="display: flex; align-items: center; gap: 10px;">
             <span style="font-size: 20px;">👻</span>
             <span style="font-weight: 600;">Chế độ khách (Dữ liệu chỉ lưu tạm thời)</span>
         </div>
-        <button onclick="showAuthModal()" style="background: white; color: #f5576c; border: none; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">🔐 Đăng nhập để lưu dữ liệu</button>
+        <button onclick="showAuthModal()" style="background: white; color: #764ba2; border: none; padding: 6px 16px; border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 13px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">🔐 Đăng nhập</button>
     </div>
     
     <!-- Navigation Tabs -->
@@ -1723,14 +1723,8 @@
                 // User is logged in
                 showUserInfo(user);
             } else {
-                // Guest mode
+                // Guest mode - không tự động hiện modal
                 showGuestMode();
-                // Auto-show login modal after 3 seconds
-                setTimeout(() => {
-                    if (!window.apiClient.isAuthenticated()) {
-                        showAuthModal();
-                    }
-                }, 3000);
             }
         }
         
@@ -1834,9 +1828,6 @@
             
             console.log('👻 Running in guest mode');
         }
-                });
-            }
-        });
         
         // ===== EXPORT FUNCTIONS =====
         async function exportProductivityReport(type = 'pdf') {
