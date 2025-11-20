@@ -97,14 +97,6 @@
         })();
     </script>
     
-    <!-- External Libraries for Export -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.6.0/jspdf.plugin.autotable.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-    
-    <!-- API Client for Backend Connection -->
-    <script src="js/api-client.js"></script>
-    
     <!-- CSS -->
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/productivity.css">
@@ -324,11 +316,8 @@
             <div class="section-card">
                 <h2>⚡ Hành Động Nhanh</h2>
                 <div class="quick-actions">
-                    <button onclick="exportProductivityReport('pdf')" class="action-btn">
-                        📄 Xuất PDF
-                    </button>
-                    <button onclick="exportProductivityReport('csv')" class="action-btn">
-                        📊 Xuất CSV
+                    <button onclick="if(window.productivityTracker) window.productivityTracker.exportData()" class="action-btn">
+                        💾 Xuất báo cáo
                     </button>
                     <button onclick="if(window.productivityTracker && confirm('Xóa tất cả dữ liệu?')) window.productivityTracker.resetData()" class="action-btn danger">
                         🗑️ Xóa dữ liệu
@@ -774,7 +763,6 @@
     
     <script src="js/config.js"></script>
     <script src="js/emotions.js"></script>
-    <script src="js/export-service.js"></script>
     <script src="js/camera.js"></script>
     
     <!-- Productivity with duplicate prevention -->
@@ -1054,28 +1042,6 @@
                     console.log('✅ You can now use:');
                     console.log('   - window.productivityTracker');
                     console.log('   - window.aiAssistant');
-                    console.log('   - window.apiClient (backend)');
-                    
-                    // ===== BACKEND INTEGRATION =====
-                    // Auto-start session if user is logged in
-                    if (window.apiClient && window.apiClient.isAuthenticated()) {
-                        console.log('🔌 User authenticated, checking active session...');
-                        window.apiClient.getActiveSession()
-                            .then(session => {
-                                if (session && session.session) {
-                                    console.log('✅ Active session found:', session.session.id);
-                                    window.currentSessionId = session.session.id;
-                                } else {
-                                    console.log('📝 No active session, will start on camera');
-                                }
-                            })
-                            .catch(err => console.warn('⚠️ Session check failed:', err));
-                        
-                        // Start auto-sync
-                        window.apiClient.startAutoSync(5);
-                    } else {
-                        console.log('👤 User not authenticated, running in offline mode');
-                    }
                     
                     // Update status UI to show ready state
                     const statusElement = document.getElementById('status');
@@ -1625,59 +1591,6 @@
                 });
             }
         });
-        
-        // ===== EXPORT FUNCTIONS =====
-        async function exportProductivityReport(type = 'pdf') {
-            if (!window.exportService) {
-                window.exportService = new ExportService();
-            }
-            
-            if (!window.productivityTracker) {
-                alert('⚠️ Chưa có dữ liệu để xuất!');
-                return;
-            }
-            
-            const stats = window.productivityTracker.getCurrentStats();
-            const user = window.apiClient?.getCurrentUser() || { email: 'User' };
-            
-            const data = {
-                totalWorkTime: stats.totalWorkTime || 0,
-                focusedTime: stats.focusedTime || 0,
-                distractedTime: stats.distractedTime || 0,
-                averageFocusScore: window.productivityTracker.focusScore || 0,
-                pomodoroCompleted: stats.pomodoroCompleted || 0,
-                emotionHistory: window.productivityTracker.emotionHistory || [],
-                notes: window.productivityTracker.workNotes || []
-            };
-            
-            const options = {
-                title: 'Báo Cáo Năng Suất',
-                userName: user.fullName || user.email,
-                dateRange: 'Hôm nay',
-                includeCharts: true,
-                includeNotes: true
-            };
-            
-            try {
-                if (type === 'pdf') {
-                    await window.exportService.exportToPDF(data, options);
-                    alert('✅ Đã xuất PDF thành công!');
-                } else if (type === 'csv') {
-                    await window.exportService.exportToCSV(data.emotionHistory, options);
-                    alert('✅ Đã xuất CSV thành công!');
-                }
-                
-                // Log export to backend
-                if (window.apiClient && window.apiClient.isAuthenticated()) {
-                    const today = new Date().toISOString().split('T')[0];
-                    window.apiClient.logExport(type, today, today, `report_${Date.now()}.${type}`)
-                        .catch(err => console.warn('⚠️ Failed to log export:', err));
-                }
-            } catch (err) {
-                console.error('Export error:', err);
-                alert('❌ Lỗi xuất file: ' + err.message);
-            }
-        }
     </script>
 </body>
 </html>

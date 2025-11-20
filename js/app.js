@@ -128,6 +128,17 @@ class EmotionDetectionApp {
 
         this.cameraHandler.setupCanvas();
         
+        // ===== START BACKEND SESSION =====
+        if (window.apiClient && window.apiClient.isAuthenticated()) {
+            try {
+                const sessionResponse = await window.apiClient.startSession('work');
+                window.currentSessionId = sessionResponse.session.id;
+                console.log('✅ Work session started:', window.currentSessionId);
+            } catch (err) {
+                console.warn('⚠️ Failed to start backend session:', err.message);
+            }
+        }
+        
         this.isRunning = true;
         document.getElementById('startBtn').disabled = true;
         document.getElementById('stopBtn').disabled = false;
@@ -144,6 +155,19 @@ class EmotionDetectionApp {
         if (this.detectionInterval) {
             clearInterval(this.detectionInterval);
             this.detectionInterval = null;
+        }
+        
+        // ===== END BACKEND SESSION =====
+        if (window.apiClient && window.apiClient.isAuthenticated() && window.currentSessionId) {
+            const focusScore = window.productivityTracker?.focusScore || 0;
+            const pomodoroCount = window.productivityTracker?.pomodoroCompleted || 0;
+            
+            window.apiClient.endSession(window.currentSessionId, focusScore, pomodoroCount)
+                .then(() => {
+                    console.log('✅ Work session ended');
+                    window.currentSessionId = null;
+                })
+                .catch(err => console.warn('⚠️ Failed to end session:', err.message));
         }
         
         this.cameraHandler.stopCamera();
@@ -280,6 +304,29 @@ class EmotionDetectionApp {
                 window.aiAssistant.processEmotionData(emotion, confidence, faceDetected);
             } catch (error) {
                 console.error('Error syncing with AI Assistant:', error);
+            }
+        }
+        
+        // ===== BACKEND SYNC - LƯU VÀO DATABASE =====
+        if (window.apiClient && window.apiClient.isAuthenticated() && faceDetected) {
+            // Throttle backend sync (only save every 10 seconds to avoid overload)
+            if (!this.lastBackendSync || Date.now() - this.lastBackendSync > 10000) {
+                const focusScore = window.productivityTracker?.focusScore || 0;
+                const sessionId = window.currentSessionId;
+                
+                if (sessionId) {
+                    window.apiClient.saveEmotion(
+                        sessionId,
+                        emotion,
+                        confidence,
+                        focusScore,
+                        { timestamp: new Date().toISOString() }
+                    ).catch(err => {
+                        console.warn('⚠️ Backend sync failed (will retry):', err.message);
+                    });
+                    
+                    this.lastBackendSync = Date.now();
+                }
             }
         }
     }
