@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎭 Emotion & Productivity Tracker - Production Ready</title>
+    
+    <!-- External Libraries -->
+    <!-- jsPDF for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    
+    <!-- PapaParse for CSV export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    
+    <!-- Face-API.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.min.js"></script>
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/productivity.css">
+    
+    <style>
+        /* Quick inline styles for auth and export features */
+        .export-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .export-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+        
+        .export-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .export-btn-pdf {
+            background: linear-gradient(135deg, #e53935, #d32f2f);
+            color: white;
+        }
+        
+        .export-btn-csv {
+            background: linear-gradient(135deg, #43a047, #388e3c);
+            color: white;
+        }
+        
+        .export-btn-all {
+            background: linear-gradient(135deg, #1e88e5, #1565c0);
+            color: white;
+        }
+        
+        .export-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        
+        .export-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .sync-indicator {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            z-index: 999;
+        }
+        
+        .sync-indicator.syncing {
+            background: #fff3cd;
+        }
+        
+        .sync-indicator.synced {
+            background: #d4edda;
+        }
+        
+        .sync-indicator.offline {
+            background: #f8d7da;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .sync-spinner {
+            animation: spin 1s linear infinite;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sync Indicator -->
+    <div id="syncIndicator" class="sync-indicator offline" style="display: none;">
+        <span id="syncIcon">📡</span>
+        <span id="syncText">Chưa kết nối</span>
+    </div>
+
+    <!-- Main App Content (include from original index.html) -->
+    <div id="app-container">
+        <!-- Navigation Tabs -->
+        <div class="tab-navigation">
+            <button class="tab-btn active" data-tab="emotion">🎭 Nhận Diện Cảm Xúc</button>
+            <button class="tab-btn" data-tab="productivity">💼 Hỗ Trợ Công Việc</button>
+            <button class="tab-btn" data-tab="analytics">📊 Thống Kê</button>
+            <button class="tab-btn" data-tab="export">💾 Xuất Báo Cáo</button>
+        </div>
+
+        <div class="container">
+            <header>
+                <h1>🎭 AI Emotion & Productivity Tracker</h1>
+                <p class="subtitle">Ứng dụng theo dõi cảm xúc và năng suất làm việc chuyên nghiệp</p>
+            </header>
+
+            <!-- Emotion Detection Tab -->
+            <div id="emotionTab" class="tab-content">
+                <div id="status" class="status">Đang tải...</div>
+                
+                <div class="video-container">
+                    <video id="video" autoplay muted playsinline></video>
+                    <canvas id="canvas"></canvas>
+                </div>
+
+                <div class="controls">
+                    <button id="setupBtn">📹 Thiết lập Camera</button>
+                    <button id="startBtn" disabled>▶️ Bắt Đầu</button>
+                    <button id="stopBtn" disabled>⏹️ Dừng Lại</button>
+                </div>
+
+                <div id="emotionDisplay" class="emotion-display">
+                    <div id="emotionEmoji" class="emotion-emoji">🤖</div>
+                    <div id="emotionText" class="emotion-text">Đang chờ...</div>
+                    <div id="emotionMessage" class="emotion-message">Nhấn "Bắt Đầu" để nhận diện</div>
+                </div>
+
+                <div id="stats" class="stats">
+                    <div class="stat-item">
+                        <span class="stat-label">FPS:</span>
+                        <span id="fps" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Độ chính xác:</span>
+                        <span id="confidence" class="stat-value">0%</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Camera:</span>
+                        <span id="cameraStatus" class="stat-value">Chưa thiết lập</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Productivity Tab -->
+            <div id="productivityTab" class="tab-content" style="display: none;">
+                <div id="workState" class="section-card">
+                    <h2>📊 Trạng Thái Làm Việc</h2>
+                    <p>Đang phân tích...</p>
+                </div>
+
+                <div class="section-card">
+                    <h2>🍅 Pomodoro Timer</h2>
+                    <div id="pomodoroTimer">
+                        <p>Timer sẽ xuất hiện khi bạn bắt đầu</p>
+                    </div>
+                </div>
+
+                <div class="section-card">
+                    <h2>📝 Ghi Chú Công Việc</h2>
+                    <div class="note-input-group">
+                        <input type="text" id="noteInput" placeholder="Thêm ghi chú..." />
+                        <button onclick="addNote()" class="btn-primary">➕ Thêm</button>
+                    </div>
+                    <div id="workNotes"></div>
+                </div>
+            </div>
+
+            <!-- Analytics Tab -->
+            <div id="analyticsTab" class="tab-content" style="display: none;">
+                <div class="section-card">
+                    <h2>📈 Thống Kê Năng Suất</h2>
+                    <div id="productivityStats"></div>
+                </div>
+
+                <div class="section-card">
+                    <h2>🎭 Phân Bố Cảm Xúc</h2>
+                    <div id="emotionChart"></div>
+                </div>
+
+                <div class="section-card">
+                    <h2>📊 Lịch Sử Cảm Xúc</h2>
+                    <div id="emotionTimeline"></div>
+                </div>
+            </div>
+
+            <!-- Export Tab -->
+            <div id="exportTab" class="tab-content" style="display: none;">
+                <div class="export-section">
+                    <h2>💾 Xuất Báo Cáo Năng Suất</h2>
+                    <p>Xuất dữ liệu thành file PDF hoặc CSV để lưu trữ và phân tích</p>
+                    
+                    <div class="export-buttons">
+                        <button class="export-btn export-btn-pdf" onclick="exportPDF()">
+                            📄 Xuất PDF
+                        </button>
+                        <button class="export-btn export-btn-csv" onclick="exportCSVSummary()">
+                            📊 Xuất CSV (Tổng quan)
+                        </button>
+                        <button class="export-btn export-btn-csv" onclick="exportCSVEmotions()">
+                            🎭 Xuất CSV (Cảm xúc)
+                        </button>
+                        <button class="export-btn export-btn-csv" onclick="exportCSVSessions()">
+                            ⏱️ Xuất CSV (Phiên làm việc)
+                        </button>
+                        <button class="export-btn export-btn-all" onclick="exportAll()">
+                            💼 Xuất Tất Cả
+                        </button>
+                    </div>
+
+                    <div id="exportStatus" style="margin-top: 15px;"></div>
+                </div>
+
+                <div class="section-card">
+                    <h2>📜 Lịch Sử Xuất File</h2>
+                    <div id="exportHistory"></div>
+                </div>
+
+                <div class="section-card">
+                    <h2>⚙️ Tùy Chọn Xuất</h2>
+                    <div class="form-group">
+                        <label>👤 Tên người dùng:</label>
+                        <input type="text" id="exportUserName" placeholder="Nguyễn Văn A" />
+                    </div>
+                    <div class="form-group">
+                        <label>📅 Khoảng thời gian:</label>
+                        <select id="exportDateRange">
+                            <option value="today">Hôm nay</option>
+                            <option value="yesterday">Hôm qua</option>
+                            <option value="week">Tuần này</option>
+                            <option value="month">Tháng này</option>
+                            <option value="all">Tất cả</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Files -->
+    <script src="js/config.js"></script>
+    <script src="js/emotions.js"></script>
+    <script src="js/camera.js"></script>
+    <script src="js/productivity.js"></script>
+    <script src="js/export-service.js"></script>
+    <script src="js/api-client.js"></script>
+    <script src="js/auth-ui.js"></script>
+    <script src="js/app.js"></script>
+
+    <!-- Export Functions -->
+    <script>
+        // Export PDF
+        async function exportPDF() {
+            if (!window.productivityTracker) {
+                alert('⚠️ Chưa có dữ liệu để xuất. Hãy bắt đầu theo dõi trước!');
+                return;
+            }
+
+            try {
+                const userName = document.getElementById('exportUserName')?.value || 
+                                window.authUI?.currentUser?.fullName || 
+                                'User';
+                
+                const dateRange = document.getElementById('exportDateRange')?.value || 'today';
+                
+                const data = window.exportService.prepareExportData(window.productivityTracker);
+                
+                const result = await window.exportService.exportToPDF(data, {
+                    title: 'Báo Cáo Năng Suất',
+                    userName,
+                    dateRange: getDateRangeText(dateRange),
+                    includeCharts: true,
+                    includeNotes: true
+                });
+
+                showExportStatus('✅ Xuất PDF thành công: ' + result.fileName, 'success');
+
+                // Log to server if authenticated
+                if (window.apiClient?.isAuthenticated()) {
+                    await window.apiClient.logExport('pdf', null, null, result.fileName);
+                }
+
+            } catch (error) {
+                console.error('Export PDF error:', error);
+                showExportStatus('❌ Lỗi xuất PDF: ' + error.message, 'error');
+            }
+        }
+
+        // Export CSV
+        async function exportCSVSummary() {
+            if (!window.productivityTracker) {
+                alert('⚠️ Chưa có dữ liệu để xuất!');
+                return;
+            }
+
+            try {
+                const data = window.exportService.prepareExportData(window.productivityTracker);
+                const result = await window.exportService.exportToCSV(data, { type: 'summary' });
+                
+                showExportStatus('✅ Xuất CSV thành công: ' + result.fileName, 'success');
+
+                if (window.apiClient?.isAuthenticated()) {
+                    await window.apiClient.logExport('csv', null, null, result.fileName);
+                }
+            } catch (error) {
+                console.error('Export CSV error:', error);
+                showExportStatus('❌ Lỗi xuất CSV: ' + error.message, 'error');
+            }
+        }
+
+        async function exportCSVEmotions() {
+            const data = window.exportService.prepareExportData(window.productivityTracker);
+            await window.exportService.exportToCSV(data, { type: 'emotions' });
+            showExportStatus('✅ Xuất CSV cảm xúc thành công', 'success');
+        }
+
+        async function exportCSVSessions() {
+            const data = window.exportService.prepareExportData(window.productivityTracker);
+            await window.exportService.exportToCSV(data, { type: 'sessions' });
+            showExportStatus('✅ Xuất CSV phiên làm việc thành công', 'success');
+        }
+
+        async function exportAll() {
+            const data = window.exportService.prepareExportData(window.productivityTracker);
+            await window.exportService.exportAll(data);
+            showExportStatus('✅ Đã xuất tất cả file', 'success');
+        }
+
+        function showExportStatus(message, type) {
+            const statusEl = document.getElementById('exportStatus');
+            if (statusEl) {
+                statusEl.innerHTML = `
+                    <div style="padding: 10px; background: ${type === 'success' ? '#d4edda' : '#f8d7da'}; 
+                         border-radius: 5px; color: ${type === 'success' ? '#155724' : '#721c24'};">
+                        ${message}
+                    </div>
+                `;
+
+                setTimeout(() => {
+                    statusEl.innerHTML = '';
+                }, 5000);
+            }
+        }
+
+        function getDateRangeText(range) {
+            const texts = {
+                'today': 'Hôm nay',
+                'yesterday': 'Hôm qua',
+                'week': 'Tuần này',
+                'month': 'Tháng này',
+                'all': 'Tất cả thời gian'
+            };
+            return texts[range] || 'Hôm nay';
+        }
+
+        // Tab switching
+        document.addEventListener('DOMContentLoaded', () => {
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const tabName = btn.getAttribute('data-tab');
+                    
+                    // Hide all tabs
+                    document.querySelectorAll('.tab-content').forEach(tab => {
+                        tab.style.display = 'none';
+                    });
+                    
+                    // Remove active class
+                    tabBtns.forEach(b => b.classList.remove('active'));
+                    
+                    // Show selected tab
+                    btn.classList.add('active');
+                    const selectedTab = document.getElementById(tabName + 'Tab');
+                    if (selectedTab) {
+                        selectedTab.style.display = 'block';
+                    }
+                });
+            });
+
+            // Update sync indicator
+            updateSyncIndicator();
+            setInterval(updateSyncIndicator, 5000);
+        });
+
+        function updateSyncIndicator() {
+            const indicator = document.getElementById('syncIndicator');
+            const icon = document.getElementById('syncIcon');
+            const text = document.getElementById('syncText');
+            
+            if (!indicator) return;
+
+            if (window.apiClient?.isAuthenticated()) {
+                indicator.style.display = 'flex';
+                indicator.className = 'sync-indicator synced';
+                icon.textContent = '✅';
+                text.textContent = 'Đã đồng bộ';
+            } else {
+                indicator.style.display = 'flex';
+                indicator.className = 'sync-indicator offline';
+                icon.textContent = '📡';
+                text.textContent = 'Chế độ offline';
+            }
+        }
+
+        function addNote() {
+            const input = document.getElementById('noteInput');
+            const note = input?.value?.trim();
+            
+            if (!note) {
+                alert('⚠️ Vui lòng nhập nội dung ghi chú!');
+                return;
+            }
+            
+            if (window.productivityTracker) {
+                window.productivityTracker.addWorkNote(note);
+                input.value = '';
+                
+                // Save to server if authenticated
+                if (window.apiClient?.isAuthenticated()) {
+                    const emotion = window.productivityTracker.emotionHistory.length > 0 
+                        ? window.productivityTracker.emotionHistory[window.productivityTracker.emotionHistory.length - 1].emotion 
+                        : null;
+                    
+                    window.apiClient.createNote(
+                        null,
+                        note,
+                        emotion,
+                        Math.round(window.productivityTracker.focusScore)
+                    ).catch(err => console.error('Save note error:', err));
+                }
+            }
+        }
+    </script>
+</body>
+</html>
