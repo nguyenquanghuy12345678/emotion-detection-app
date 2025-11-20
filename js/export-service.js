@@ -6,11 +6,15 @@
 class ExportService {
     constructor() {
         // Check if libraries are loaded
-        this.jsPDFLoaded = typeof jsPDF !== 'undefined';
+        // jsPDF UMD module exposes as window.jspdf (lowercase)
+        this.jsPDFLoaded = typeof window.jspdf !== 'undefined';
         this.papaParseLoaded = typeof Papa !== 'undefined';
         
         if (!this.jsPDFLoaded) {
             console.warn('⚠️ jsPDF not loaded. PDF export will not work.');
+            console.warn('Available globals:', Object.keys(window).filter(k => k.toLowerCase().includes('pdf')));
+        } else {
+            console.log('✅ jsPDF loaded successfully:', window.jspdf);
         }
         if (!this.papaParseLoaded) {
             console.warn('⚠️ PapaParse not loaded. CSV export will not work.');
@@ -34,7 +38,8 @@ class ExportService {
             includeNotes = true
         } = options;
 
-        // Initialize jsPDF
+        // Initialize jsPDF - UMD module uses window.jspdf.jsPDF
+        const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
         let yPosition = 20;
 

@@ -7,6 +7,7 @@ class EmotionDetectionApp {
         this.detectionInterval = null;
         this.fpsCounter = 0;
         this.lastFpsUpdate = Date.now();
+        this.lastBackendSync = 0; // Track last backend sync time
         
         this.init();
     }
