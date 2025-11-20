@@ -5,14 +5,20 @@
 
 class APIClient {
     constructor() {
-        this.baseURL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        // Auto-detect base URL based on environment
+        const isLocal = window.location.hostname === 'localhost' || 
+                       window.location.hostname === '127.0.0.1' ||
+                       window.location.hostname === '';
+        
+        this.baseURL = isLocal
             ? 'http://localhost:3000/api'
-            : '/api'; // Production will use same domain
+            : '/api'; // Vercel will route this to serverless functions
         
         this.token = localStorage.getItem('authToken');
         this.user = JSON.parse(localStorage.getItem('user') || 'null');
         
         console.log('🔌 API Client initialized:', this.baseURL);
+        console.log('🌍 Environment:', isLocal ? 'Local' : 'Production (Vercel)');
     }
 
     // ============================================
@@ -156,7 +162,7 @@ class APIClient {
     }
 
     async endSession(sessionId, focusScore, pomodoroCount) {
-        return await this.request('POST', `/sessions/${sessionId}/end`, { 
+        return await this.request('POST', `/sessions/end?id=${sessionId}`, { 
             focusScore, 
             pomodoroCount 
         });
@@ -246,7 +252,7 @@ class APIClient {
     }
 
     async deleteNote(noteId) {
-        return await this.request('DELETE', `/notes/${noteId}`);
+        return await this.request('DELETE', `/notes?id=${noteId}`);
     }
 
     // ============================================

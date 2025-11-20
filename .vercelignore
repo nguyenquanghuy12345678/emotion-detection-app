@@ -1,0 +1,8 @@
+# Vercel Ignore
+node_modules
+.env
+.env.local
+server.js
+database/database.js
+*.log
+.DS_Store
