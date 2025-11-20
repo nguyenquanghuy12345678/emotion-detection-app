@@ -262,12 +262,15 @@ app.post('/api/emotions', authenticateToken, async (req, res) => {
             });
         }
 
+        // Round focusScore to integer for database INTEGER field
+        const roundedFocusScore = Math.round(parseFloat(focusScore) || 0);
+
         const emotionData = await db.saveEmotion(
             req.user.userId,
             sessionId,
             emotion,
             confidence,
-            focusScore || 0,
+            roundedFocusScore,
             metadata || {}
         );
 

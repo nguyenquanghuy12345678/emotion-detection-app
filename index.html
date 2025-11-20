@@ -111,6 +111,11 @@
     
     <!-- Additional CSS for camera fixes -->
     <style>
+        body {
+            margin: 0;
+            padding-top: 60px; /* Space for fixed Guest Mode Bar */
+        }
+        
         .debug-panel {
             background: #f8f9fa;
             border: 2px solid #dee2e6;
@@ -181,15 +186,16 @@
 </head>
 <body>
     <!-- Authentication Modal -->
-    <div id="authModal" style="display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6);">
+    <div id="authModal" style="display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); align-items: center; justify-content: center;">
         <div style="background-color: #fff; margin: 5% auto; padding: 30px; border-radius: 12px; width: 90%; max-width: 450px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h2 id="authModalTitle" style="margin: 0; color: #333;">🔐 Đăng Nhập</h2>
-                <button onclick="closeAuthModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #999;">&times;</button>
+                <button onclick="closeAuthModal()" class="close-modal" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #999;">&times;</button>
             </div>
             
             <!-- Login Form -->
             <div id="loginForm">
+                <div id="loginError" style="display: none; padding: 10px; margin-bottom: 15px; background: #fee; border: 1px solid #fcc; border-radius: 6px; color: #c33; font-size: 14px;"></div>
                 <form onsubmit="handleLogin(event)">
                     <div style="margin-bottom: 15px;">
                         <label style="display: block; margin-bottom: 5px; color: #555; font-weight: 500;">Email</label>
@@ -199,15 +205,16 @@
                         <label style="display: block; margin-bottom: 5px; color: #555; font-weight: 500;">Mật khẩu</label>
                         <input type="password" id="loginPassword" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; box-sizing: border-box;">
                     </div>
-                    <button type="submit" style="width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer;">Đăng Nhập</button>
+                    <button id="loginBtn" type="submit" style="width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer;">Đăng Nhập</button>
                 </form>
                 <p style="text-align: center; margin-top: 15px; color: #666;">
-                    Chưa có tài khoản? <a href="#" onclick="switchToRegister(); return false;" style="color: #007bff; text-decoration: none; font-weight: 500;">Đăng ký ngay</a>
+                    Chưa có tài khoản? <a href="#" id="switchToRegister" style="color: #007bff; text-decoration: none; font-weight: 500;">Đăng ký ngay</a>
                 </p>
             </div>
             
             <!-- Register Form -->
             <div id="registerForm" style="display: none;">
+                <div id="registerError" style="display: none; padding: 10px; margin-bottom: 15px; background: #fee; border: 1px solid #fcc; border-radius: 6px; color: #c33; font-size: 14px;"></div>
                 <form onsubmit="handleRegister(event)">
                     <div style="margin-bottom: 15px;">
                         <label style="display: block; margin-bottom: 5px; color: #555; font-weight: 500;">Họ và tên</label>
@@ -221,10 +228,10 @@
                         <label style="display: block; margin-bottom: 5px; color: #555; font-weight: 500;">Mật khẩu (tối thiểu 6 ký tự)</label>
                         <input type="password" id="registerPassword" required minlength="6" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; box-sizing: border-box;">
                     </div>
-                    <button type="submit" style="width: 100%; padding: 12px; background: #28a745; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer;">Đăng Ký</button>
+                    <button id="registerBtn" type="submit" style="width: 100%; padding: 12px; background: #28a745; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer;">Đăng Ký</button>
                 </form>
                 <p style="text-align: center; margin-top: 15px; color: #666;">
-                    Đã có tài khoản? <a href="#" onclick="switchToLogin(); return false;" style="color: #007bff; text-decoration: none; font-weight: 500;">Đăng nhập</a>
+                    Đã có tài khoản? <a href="#" id="switchToLogin" style="color: #007bff; text-decoration: none; font-weight: 500;">Đăng nhập</a>
                 </p>
             </div>
             
@@ -233,7 +240,7 @@
     </div>
     
     <!-- User Info Bar -->
-    <div id="userInfoBar" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 20px; display: none; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+    <div id="userInfoBar" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 20px; display: none; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: fixed; top: 0; left: 0; right: 0; z-index: 9999;">
         <div style="display: flex; align-items: center; gap: 15px;">
             <span style="font-size: 24px;">👤</span>
             <div>
@@ -242,22 +249,21 @@
             </div>
         </div>
         <div style="display: flex; gap: 10px;">
-            <button onclick="showAuthModal()" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 500;">🔄 Đổi tài khoản</button>
-            <button onclick="handleLogout()" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 500;">🚪 Đăng xuất</button>
+            <button id="logoutBtn" onclick="handleLogout()" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 500;">🚪 Đăng xuất</button>
         </div>
     </div>
     
     <!-- Guest Mode Bar -->
-    <div id="guestModeBar" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 8px 16px; display: none; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1); position: fixed; top: 0; left: 0; right: 0; z-index: 1000;">
+    <div id="guestModeBar" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 8px 16px; display: flex !important; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1); position: fixed; top: 0; left: 0; right: 0; z-index: 9999;">
         <div style="display: flex; align-items: center; gap: 10px;">
             <span style="font-size: 20px;">👻</span>
             <span style="font-weight: 600;">Chế độ khách (Dữ liệu chỉ lưu tạm thời)</span>
         </div>
-        <button onclick="showAuthModal()" style="background: white; color: #764ba2; border: none; padding: 6px 16px; border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 13px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">🔐 Đăng nhập</button>
+        <button id="guestLoginBtn" onclick="showAuthModal()" style="background: white; color: #764ba2; border: none; padding: 6px 16px; border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 13px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">🔐 Đăng nhập</button>
     </div>
     
     <!-- Navigation Tabs -->
-    <div class="tab-navigation">
+    <div class="tab-navigation" style="margin-top: 60px;">
         <button class="tab-btn active" data-tab="emotion">🎭 Nhận Diện Cảm Xúc</button>
         <button class="tab-btn" data-tab="productivity">💼 Hỗ Trợ Công Việc</button>
         <button class="tab-btn" data-tab="analytics">📊 Thống Kê</button>
@@ -851,6 +857,7 @@
     <script src="js/config.js"></script>
     <script src="js/emotions.js"></script>
     <script src="js/export-service.js"></script>
+    <script src="js/export-service-pro.js"></script>
     <script src="js/camera.js"></script>
     
     <!-- Productivity with duplicate prevention -->
@@ -1701,6 +1708,24 @@
                 });
             }
             
+            // Auth modal event listeners
+            const switchToRegisterLink = document.getElementById('switchToRegister');
+            const switchToLoginLink = document.getElementById('switchToLogin');
+            
+            if (switchToRegisterLink) {
+                switchToRegisterLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    switchToRegister();
+                });
+            }
+            
+            if (switchToLoginLink) {
+                switchToLoginLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    switchToLogin();
+                });
+            }
+            
             // Initialize authentication UI
             initAuthUI();
         });
@@ -1713,7 +1738,8 @@
             console.log('🔐 Initializing Authentication UI...');
             
             if (!window.apiClient) {
-                console.warn('⚠️ API Client not initialized');
+                console.warn('⚠️ API Client not initialized - showing guest mode');
+                showGuestMode();
                 return;
             }
             
@@ -1728,91 +1754,6 @@
             }
         }
         
-        function showAuthModal() {
-            document.getElementById('authModal').style.display = 'block';
-        }
-        
-        function closeAuthModal() {
-            document.getElementById('authModal').style.display = 'none';
-        }
-        
-        function switchToRegister() {
-            document.getElementById('loginForm').style.display = 'none';
-            document.getElementById('registerForm').style.display = 'block';
-            document.getElementById('authModalTitle').textContent = '📝 Đăng Ký';
-            document.getElementById('authMessage').style.display = 'none';
-        }
-        
-        function switchToLogin() {
-            document.getElementById('registerForm').style.display = 'none';
-            document.getElementById('loginForm').style.display = 'block';
-            document.getElementById('authModalTitle').textContent = '🔐 Đăng Nhập';
-            document.getElementById('authMessage').style.display = 'none';
-        }
-        
-        function showAuthMessage(message, isError = false) {
-            const msgEl = document.getElementById('authMessage');
-            msgEl.textContent = message;
-            msgEl.style.display = 'block';
-            msgEl.style.background = isError ? '#f8d7da' : '#d4edda';
-            msgEl.style.color = isError ? '#721c24' : '#155724';
-        }
-        
-        async function handleLogin(event) {
-            event.preventDefault();
-            
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
-            
-            try {
-                showAuthMessage('Đang đăng nhập...', false);
-                
-                const result = await window.apiClient.login(email, password);
-                
-                showAuthMessage('✅ Đăng nhập thành công!', false);
-                
-                setTimeout(() => {
-                    closeAuthModal();
-                    showUserInfo(result.user);
-                }, 1000);
-                
-            } catch (error) {
-                console.error('Login error:', error);
-                showAuthMessage('❌ ' + error.message, true);
-            }
-        }
-        
-        async function handleRegister(event) {
-            event.preventDefault();
-            
-            const fullName = document.getElementById('registerFullName').value;
-            const email = document.getElementById('registerEmail').value;
-            const password = document.getElementById('registerPassword').value;
-            
-            try {
-                showAuthMessage('Đang tạo tài khoản...', false);
-                
-                const result = await window.apiClient.register(email, password, fullName);
-                
-                showAuthMessage('✅ Đăng ký thành công!', false);
-                
-                setTimeout(() => {
-                    closeAuthModal();
-                    showUserInfo(result.user);
-                }, 1000);
-                
-            } catch (error) {
-                console.error('Register error:', error);
-                showAuthMessage('❌ ' + error.message, true);
-            }
-        }
-        
-        function handleLogout() {
-            if (confirm('Bạn có chắc muốn đăng xuất?')) {
-                window.apiClient.logout();
-            }
-        }
-        
         function showUserInfo(user) {
             document.getElementById('userInfoBar').style.display = 'flex';
             document.getElementById('guestModeBar').style.display = 'none';
@@ -1823,66 +1764,109 @@
         }
         
         function showGuestMode() {
-            document.getElementById('userInfoBar').style.display = 'none';
-            document.getElementById('guestModeBar').style.display = 'flex';
+            console.log('👻 showGuestMode() called');
             
-            console.log('👻 Running in guest mode');
+            const userInfoBar = document.getElementById('userInfoBar');
+            const guestModeBar = document.getElementById('guestModeBar');
+            
+            console.log('📊 userInfoBar element:', userInfoBar);
+            console.log('📊 guestModeBar element:', guestModeBar);
+            
+            if (userInfoBar) {
+                userInfoBar.style.display = 'none';
+                console.log('✅ userInfoBar hidden');
+            }
+            
+            if (guestModeBar) {
+                guestModeBar.style.display = 'flex';
+                console.log('✅ guestModeBar shown with display: flex');
+            } else {
+                console.error('❌ guestModeBar element not found!');
+            }
+            
+            console.log('👻 Guest mode initialized');
         }
         
         // ===== EXPORT FUNCTIONS =====
         async function exportProductivityReport(type = 'pdf') {
-            if (!window.exportService) {
-                window.exportService = new ExportService();
-            }
-            
             if (!window.productivityTracker) {
                 alert('⚠️ Chưa có dữ liệu để xuất!');
                 return;
             }
             
-            const stats = window.productivityTracker.getCurrentStats();
-            const user = window.apiClient?.getCurrentUser() || { email: 'User' };
+            const tracker = window.productivityTracker;
+            const stats = tracker.getCurrentStats();
+            const user = window.apiClient?.getCurrentUser() || { full_name: 'Người dùng', email: 'guest@local' };
             
-            // Calculate emotion distribution
+            // Thu thập dữ liệu đầy đủ từ tracker
             const emotionCounts = {};
-            const emotionHistory = window.productivityTracker.emotionHistory || [];
+            const emotionHistory = tracker.emotionHistory || [];
             emotionHistory.forEach(item => {
                 const emotion = item.emotion || 'neutral';
                 emotionCounts[emotion] = (emotionCounts[emotion] || 0) + 1;
             });
             
+            // Tính toán các chỉ số
+            const totalWorkTime = stats.totalWorkTime || 0;
+            const focusedTime = stats.focusedTime || 0;
+            const distractedTime = stats.distractedTime || 0;
+            const stressTime = stats.stressTime || 0;
+            const happyTime = stats.happyTime || 0;
+            const totalBreakTime = stats.totalBreakTime || 0;
+            
+            console.log('📊 Xuất báo cáo với dữ liệu:', {
+                totalWorkTime,
+                focusedTime,
+                distractedTime,
+                focusScore: tracker.focusScore,
+                pomodoroCompleted: tracker.pomodoroCompleted,
+                emotionCount: emotionHistory.length
+            });
+            
             const data = {
-                totalWorkTime: stats.totalWorkTime || 0,
-                focusedTime: stats.focusedTime || 0,
-                distractedTime: stats.distractedTime || 0,
-                averageFocusScore: window.productivityTracker.focusScore || 0,
-                pomodoroCompleted: stats.pomodoroCompleted || 0,
+                totalWorkTime: totalWorkTime,
+                totalBreakTime: totalBreakTime,
+                focusedTime: focusedTime,
+                distractedTime: distractedTime,
+                stressTime: stressTime,
+                happyTime: happyTime,
+                averageFocusScore: tracker.focusScore || 0,
+                pomodoroCompleted: tracker.pomodoroCompleted || 0,
                 emotionHistory: emotionHistory,
                 emotionDistribution: emotionCounts,
                 totalEmotionRecords: emotionHistory.length,
-                sessions: window.productivityTracker.workSessions || [],
-                notes: window.productivityTracker.workNotes || []
+                sessions: tracker.workSessions || [],
+                notes: tracker.workNotes || []
             };
             
             const options = {
-                title: 'Báo Cáo Năng Suất',
-                userName: user.fullName || user.email,
-                dateRange: 'Hôm nay',
-                includeCharts: true,
-                includeNotes: true
+                userName: user.full_name || user.fullName || user.email,
+                dateRange: 'Hôm nay'
             };
             
             try {
                 if (type === 'pdf') {
-                    await window.exportService.exportToPDF(data, options);
-                    alert('✅ Đã xuất PDF thành công!');
+                    // Sử dụng Professional Export Service
+                    if (window.professionalExportService) {
+                        const result = await window.professionalExportService.exportToPDF(data, options);
+                        alert(`✅ Đã xuất báo cáo PDF (${result.pages} trang)!\nTệp: ${result.filename}`);
+                    } else if (window.exportService) {
+                        // Fallback to old service
+                        await window.exportService.exportToPDF(data, options);
+                        alert('✅ Đã xuất PDF thành công!');
+                    } else {
+                        throw new Error('Export service không sẵn sàng');
+                    }
                 } else if (type === 'csv') {
-                    // Export with proper CSV format
-                    await window.exportService.exportToCSV(data, { type: 'emotions', fileName: `emotions-${Date.now()}.csv` });
-                    alert('✅ Đã xuất CSV thành công!');
+                    if (window.exportService) {
+                        await window.exportService.exportToCSV(data, { type: 'emotions', fileName: `emotions-${Date.now()}.csv` });
+                        alert('✅ Đã xuất CSV thành công!');
+                    } else {
+                        throw new Error('CSV export không sẵn sàng');
+                    }
                 }
                 
-                // Log export to backend
+                // Lưu lịch sử xuất vào backend
                 if (window.apiClient && window.apiClient.isAuthenticated()) {
                     const today = new Date().toISOString().split('T')[0];
                     window.apiClient.logExport(type, today, today, `report_${Date.now()}.${type}`)
@@ -1891,6 +1875,123 @@
             } catch (err) {
                 console.error('Export error:', err);
                 alert('❌ Lỗi xuất file: ' + err.message);
+            }
+        }
+        
+        // ============================================
+        // GLOBAL FUNCTIONS FOR HTML ONCLICK
+        // ============================================
+        
+        function showAuthModal() {
+            const modal = document.getElementById('authModal');
+            if (modal) {
+                modal.style.display = 'flex';
+                switchToLogin(); // Default to login
+            }
+        }
+        
+        function closeAuthModal() {
+            const modal = document.getElementById('authModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        }
+        
+        function switchToRegister() {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('registerForm').style.display = 'block';
+            document.getElementById('authModalTitle').textContent = '📝 Đăng Ký';
+            document.getElementById('loginError').style.display = 'none';
+            document.getElementById('registerError').style.display = 'none';
+        }
+        
+        function switchToLogin() {
+            document.getElementById('registerForm').style.display = 'none';
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('authModalTitle').textContent = '🔐 Đăng Nhập';
+            document.getElementById('loginError').style.display = 'none';
+            document.getElementById('registerError').style.display = 'none';
+        }
+        
+        async function handleLogin(event) {
+            if (event) event.preventDefault();
+            
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            
+            if (!email || !password) {
+                showError('Vui lòng nhập email và mật khẩu!', 'login');
+                return;
+            }
+            
+            try {
+                if (!window.apiClient) {
+                    showError('API Client chưa sẵn sàng!', 'login');
+                    return;
+                }
+                
+                const result = await window.apiClient.login(email, password);
+                showUserInfo(result.user);
+                closeAuthModal();
+                
+                // Reload to refresh app state
+                setTimeout(() => window.location.reload(), 500);
+            } catch (error) {
+                showError(error.message || 'Đăng nhập thất bại!', 'login');
+            }
+        }
+        
+        async function handleRegister(event) {
+            if (event) event.preventDefault();
+            
+            const fullName = document.getElementById('registerFullName').value.trim();
+            const email = document.getElementById('registerEmail').value.trim();
+            const password = document.getElementById('registerPassword').value;
+            
+            if (!fullName || !email || !password) {
+                showError('Vui lòng điền đầy đủ thông tin!', 'register');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showError('Mật khẩu phải có ít nhất 6 ký tự!', 'register');
+                return;
+            }
+            
+            try {
+                if (!window.apiClient) {
+                    showError('API Client chưa sẵn sàng!', 'register');
+                    return;
+                }
+                
+                const result = await window.apiClient.register(email, password, fullName);
+                showUserInfo(result.user);
+                closeAuthModal();
+                
+                // Reload to refresh app state
+                setTimeout(() => window.location.reload(), 500);
+            } catch (error) {
+                showError(error.message || 'Đăng ký thất bại!', 'register');
+            }
+        }
+        
+        function handleLogout() {
+            if (window.apiClient) {
+                window.apiClient.logout();
+            }
+            showGuestMode();
+            window.location.reload();
+        }
+        
+        function showError(message, form) {
+            const errorEl = document.getElementById(form === 'register' ? 'registerError' : 'loginError');
+            if (errorEl) {
+                errorEl.textContent = message;
+                errorEl.style.display = 'block';
+                
+                setTimeout(() => {
+                    errorEl.style.display = 'none';
+                }, 5000);
             }
         }
     </script>

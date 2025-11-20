@@ -52,7 +52,7 @@ class ExportService {
         doc.setFontSize(22);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(44, 62, 80);
-        doc.text(title, 105, yPosition, { align: 'center' });
+        doc.text('BAO CAO NANG SUAT', 105, yPosition, { align: 'center' });
         yPosition += 12;
 
         doc.setFontSize(11);
@@ -60,9 +60,12 @@ class ExportService {
         doc.setTextColor(52, 73, 94);
         doc.text('Nguoi dung: ' + userName, 105, yPosition, { align: 'center' });
         yPosition += 6;
-        doc.text('Khoang thoi gian: ' + dateRange, 105, yPosition, { align: 'center' });
+        doc.text('Thoi gian: ' + dateRange, 105, yPosition, { align: 'center' });
         yPosition += 6;
-        doc.text('Ngay xuat: ' + new Date().toLocaleDateString('vi-VN') + ' ' + new Date().toLocaleTimeString('vi-VN'), 105, yPosition, { align: 'center' });
+        const now = new Date();
+        const dateStr = now.getDate() + '/' + (now.getMonth() + 1) + '/' + now.getFullYear();
+        const timeStr = now.getHours() + ':' + String(now.getMinutes()).padStart(2, '0');
+        doc.text('Ngay xuat: ' + dateStr + ' ' + timeStr, 105, yPosition, { align: 'center' });
         yPosition += 15;
 
         // ===== LINE SEPARATOR =====
@@ -74,21 +77,21 @@ class ExportService {
         doc.setFontSize(16);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(41, 128, 185);
-        doc.text('Tong Quan Thong Ke', 10, yPosition);
+        doc.text('TONG QUAN THONG KE', 10, yPosition);
         yPosition += 8;
 
         const summaryData = [
-            ['Tổng thời gian làm việc', this.formatTime(data.totalWorkTime || 0)],
-            ['Thời gian tập trung', this.formatTime(data.focusedTime || 0)],
-            ['Thời gian mất tập trung', this.formatTime(data.distractedTime || 0)],
-            ['Điểm tập trung trung bình', `${Math.round(data.averageFocusScore || 0)}/100`],
-            ['Pomodoro hoàn thành', `${data.pomodoroCompleted || 0} phiên`],
-            ['Tỷ lệ tập trung', `${this.calculateFocusRate(data)}%`]
+            ['Tong thoi gian lam viec', this.formatTime(data.totalWorkTime || 0)],
+            ['Thoi gian tap trung', this.formatTime(data.focusedTime || 0)],
+            ['Thoi gian mat tap trung', this.formatTime(data.distractedTime || 0)],
+            ['Diem tap trung trung binh', `${Math.round(data.averageFocusScore || 0)}/100`],
+            ['Pomodoro hoan thanh', `${data.pomodoroCompleted || 0} phien`],
+            ['Ti le tap trung', `${this.calculateFocusRate(data)}%`]
         ];
 
         doc.autoTable({
             startY: yPosition,
-            head: [['Chi so', 'Gia tri']],
+            head: [['CHI SO', 'GIA TRI']],
             body: summaryData,
             theme: 'grid',
             headStyles: { 
