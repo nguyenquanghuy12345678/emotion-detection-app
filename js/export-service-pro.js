@@ -35,15 +35,148 @@ class ProfessionalExportService {
         };
     }
 
-    async exportToPDF(data, options = {}) {
+    // ============================================
+    // FETCH REAL DATA FROM BACKEND
+    // ============================================
+    
+    async fetchProductivityData() {
+        try {
+            // Check if user is authenticated
+            const token = localStorage.getItem('authToken');
+            
+            if (!token) {
+                console.log('📊 Guest mode - using local data');
+                return this.getLocalStorageData();
+            }
+
+            // Fetch from backend API
+            const isLocal = window.location.hostname === 'localhost' || 
+                           window.location.hostname === '127.0.0.1';
+            
+            const baseURL = isLocal ? 'http://localhost:3000/api' : '/api';
+            
+            console.log('📊 Fetching productivity data from:', `${baseURL}/productivity/stats`);
+            
+            const response = await fetch(`${baseURL}/productivity/stats`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                console.warn('⚠️ Failed to fetch from backend, using local data');
+                return this.getLocalStorageData();
+            }
+
+            const result = await response.json();
+            
+            if (result.success && result.data) {
+                console.log('✅ Fetched data from backend:', result.data);
+                return result.data;
+            } else {
+                return this.getLocalStorageData();
+            }
+        } catch (error) {
+            console.error('Error fetching productivity data:', error);
+            console.log('📊 Falling back to local storage');
+            return this.getLocalStorageData();
+        }
+    }
+
+    getLocalStorageData() {
+        // Get user info
+        const userStr = localStorage.getItem('user');
+        const user = userStr ? JSON.parse(userStr) : {
+            id: 'guest',
+            email: 'guest@local',
+            full_name: 'Khách'
+        };
+
+        // Get tracker data if available
+        if (window.productivityTracker) {
+            const tracker = window.productivityTracker;
+            const stats = tracker.getCurrentStats();
+            
+            // Calculate emotion distribution
+            const emotionCounts = {};
+            const emotionHistory = tracker.emotionHistory || [];
+            
+            emotionHistory.forEach(item => {
+                const emotion = item.emotion || 'neutral';
+                emotionCounts[emotion] = (emotionCounts[emotion] || 0) + 1;
+            });
+
+            return {
+                totalWorkTime: stats.totalWorkTime || 0,
+                totalBreakTime: stats.totalBreakTime || 0,
+                focusedTime: stats.focusedTime || 0,
+                distractedTime: stats.distractedTime || 0,
+                stressTime: stats.stressTime || 0,
+                happyTime: stats.happyTime || 0,
+                averageFocusScore: tracker.focusScore || 0,
+                pomodoroCompleted: tracker.pomodoroCompleted || 0,
+                emotionHistory: emotionHistory,
+                emotionDistribution: emotionCounts,
+                totalEmotionRecords: emotionHistory.length,
+                workSessions: tracker.workSessions || [],
+                workNotes: tracker.workNotes || [],
+                sessions: (tracker.workSessions || []).length,
+                user: user
+            };
+        }
+
+        // Fallback: Empty data for guest
+        return {
+            totalWorkTime: 0,
+            focusedTime: 0,
+            distractedTime: 0,
+            totalBreakTime: 0,
+            happyTime: 0,
+            stressTime: 0,
+            averageFocusScore: 0,
+            pomodoroCompleted: 0,
+            emotionDistribution: {},
+            totalEmotionRecords: 0,
+            emotionHistory: [],
+            workSessions: [],
+            workNotes: [],
+            sessions: 0,
+            user: user
+        };
+    }
+
+    async exportToPDF(options = {}) {
         if (!this.jsPDFLoaded) {
             throw new Error('jsPDF chưa được tải');
         }
 
+        // Fetch real data from backend or local storage
+        console.log('📄 Starting PDF export...');
+        const data = await this.fetchProductivityData();
+        
+        console.log('📊 Export data:', {
+            user: data.user,
+            totalWorkTime: data.totalWorkTime,
+            emotionRecords: data.totalEmotionRecords,
+            sessions: data.sessions
+        });
+
         const {
-            userName = 'Người dùng',
             dateRange = 'Hôm nay'
         } = options;
+
+        // Get user info from data
+        const user = data.user || {
+            id: 'guest',
+            email: 'guest@local',
+            full_name: 'Khách'
+        };
+        
+        const userName = user.full_name || user.email || 'Người dùng';
+        const userEmail = user.email || '';
+        const userId = user.id || 'N/A';
 
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
@@ -84,6 +217,10 @@ class ProfessionalExportService {
         const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
         
         doc.text(`Nguoi dung: ${userName}`, margin, y);
+        y += 5;
+        doc.text(`Email: ${userEmail}`, margin, y);
+        y += 5;
+        doc.text(`ID: ${userId}`, margin, y);
         y += 5;
         doc.text(`Thoi gian: ${dateRange}`, margin, y);
         y += 5;

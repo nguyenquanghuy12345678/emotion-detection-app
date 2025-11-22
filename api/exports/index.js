@@ -30,20 +30,21 @@ export default async function handler(req, res) {
       const { exportType, dateRangeStart, dateRangeEnd, fileName } = req.body;
 
       const result = await sql`
-        INSERT INTO export_logs (
+        INSERT INTO export_history (
           user_id, export_type, date_range_start,
-          date_range_end, file_name, exported_at
+          date_range_end, file_name
         )
         VALUES (
           ${decoded.userId}, ${exportType}, ${dateRangeStart},
-          ${dateRangeEnd}, ${fileName}, NOW()
+          ${dateRangeEnd}, ${fileName}
         )
         RETURNING *
       `;
 
       return res.status(201).json({
+        success: true,
         message: 'Export logged',
-        export: result[0]
+        data: result[0]
       });
     }
 
@@ -52,13 +53,16 @@ export default async function handler(req, res) {
       const limit = parseInt(req.query.limit) || 20;
 
       const exports = await sql`
-        SELECT * FROM export_logs
+        SELECT * FROM export_history
         WHERE user_id = ${decoded.userId}
-        ORDER BY exported_at DESC
+        ORDER BY created_at DESC
         LIMIT ${limit}
       `;
 
-      return res.status(200).json({ exports });
+      return res.status(200).json({ 
+        success: true,
+        data: exports 
+      });
     }
 
     return res.status(405).json({ error: 'Method not allowed' });
@@ -70,6 +74,9 @@ export default async function handler(req, res) {
       return res.status(403).json({ error: 'Invalid token' });
     }
     
-    res.status(500).json({ error: 'Request failed' });
+    res.status(500).json({ 
+      error: 'Request failed',
+      message: error.message 
+    });
   }
 }

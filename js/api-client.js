@@ -41,12 +41,23 @@ class APIClient {
                 throw new Error(data.error || 'Registration failed');
             }
 
-            // Save token and user
+            // Save token and full user data
             this.token = data.token;
-            this.user = data.user;
+            this.user = {
+                id: data.user.id,
+                email: data.user.email,
+                full_name: data.user.full_name || data.user.fullName,
+                created_at: data.user.created_at,
+                isGuest: false
+            };
+            
             localStorage.setItem('authToken', this.token);
             localStorage.setItem('user', JSON.stringify(this.user));
+            localStorage.setItem('userId', this.user.id);
+            localStorage.setItem('userEmail', this.user.email);
+            localStorage.setItem('userName', this.user.full_name);
 
+            console.log('✅ User registered:', this.user);
             return data;
         } catch (error) {
             console.error('Register error:', error);
@@ -70,12 +81,24 @@ class APIClient {
                 throw new Error(data.error || 'Login failed');
             }
 
-            // Save token and user
+            // Save token and complete user data
             this.token = data.token;
-            this.user = data.user;
+            this.user = {
+                id: data.user.id,
+                email: data.user.email,
+                full_name: data.user.full_name || data.user.fullName,
+                created_at: data.user.created_at,
+                last_login: data.user.last_login,
+                isGuest: false
+            };
+            
             localStorage.setItem('authToken', this.token);
             localStorage.setItem('user', JSON.stringify(this.user));
+            localStorage.setItem('userId', this.user.id);
+            localStorage.setItem('userEmail', this.user.email);
+            localStorage.setItem('userName', this.user.full_name);
 
+            console.log('✅ User logged in:', this.user);
             return data;
         } catch (error) {
             console.error('Login error:', error);
@@ -88,6 +111,10 @@ class APIClient {
         this.user = null;
         localStorage.removeItem('authToken');
         localStorage.removeItem('user');
+        localStorage.removeItem('userId');
+        localStorage.removeItem('userEmail');
+        localStorage.removeItem('userName');
+        console.log('👋 User logged out');
         window.location.reload();
     }
 

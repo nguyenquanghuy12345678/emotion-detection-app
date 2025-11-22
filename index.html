@@ -1789,88 +1789,73 @@
         
         // ===== EXPORT FUNCTIONS =====
         async function exportProductivityReport(type = 'pdf') {
-            if (!window.productivityTracker) {
-                alert('⚠️ Chưa có dữ liệu để xuất!');
-                return;
-            }
-            
-            const tracker = window.productivityTracker;
-            const stats = tracker.getCurrentStats();
-            const user = window.apiClient?.getCurrentUser() || { full_name: 'Người dùng', email: 'guest@local' };
-            
-            // Thu thập dữ liệu đầy đủ từ tracker
-            const emotionCounts = {};
-            const emotionHistory = tracker.emotionHistory || [];
-            emotionHistory.forEach(item => {
-                const emotion = item.emotion || 'neutral';
-                emotionCounts[emotion] = (emotionCounts[emotion] || 0) + 1;
-            });
-            
-            // Tính toán các chỉ số
-            const totalWorkTime = stats.totalWorkTime || 0;
-            const focusedTime = stats.focusedTime || 0;
-            const distractedTime = stats.distractedTime || 0;
-            const stressTime = stats.stressTime || 0;
-            const happyTime = stats.happyTime || 0;
-            const totalBreakTime = stats.totalBreakTime || 0;
-            
-            console.log('📊 Xuất báo cáo với dữ liệu:', {
-                totalWorkTime,
-                focusedTime,
-                distractedTime,
-                focusScore: tracker.focusScore,
-                pomodoroCompleted: tracker.pomodoroCompleted,
-                emotionCount: emotionHistory.length
-            });
-            
-            const data = {
-                totalWorkTime: totalWorkTime,
-                totalBreakTime: totalBreakTime,
-                focusedTime: focusedTime,
-                distractedTime: distractedTime,
-                stressTime: stressTime,
-                happyTime: happyTime,
-                averageFocusScore: tracker.focusScore || 0,
-                pomodoroCompleted: tracker.pomodoroCompleted || 0,
-                emotionHistory: emotionHistory,
-                emotionDistribution: emotionCounts,
-                totalEmotionRecords: emotionHistory.length,
-                sessions: tracker.workSessions || [],
-                notes: tracker.workNotes || []
-            };
-            
-            const options = {
-                userName: user.full_name || user.fullName || user.email,
-                dateRange: 'Hôm nay'
-            };
-            
             try {
+                console.log('📊 Starting export process...');
+                
                 if (type === 'pdf') {
-                    // Sử dụng Professional Export Service
-                    if (window.professionalExportService) {
-                        const result = await window.professionalExportService.exportToPDF(data, options);
-                        alert(`✅ Đã xuất báo cáo PDF (${result.pages} trang)!\nTệp: ${result.filename}`);
-                    } else if (window.exportService) {
-                        // Fallback to old service
-                        await window.exportService.exportToPDF(data, options);
-                        alert('✅ Đã xuất PDF thành công!');
+                    // Use Professional Export Service with real data
+                    if (!window.professionalExportService) {
+                        throw new Error('Professional Export Service không sẵn sàng');
+                    }
+
+                    // Export will automatically fetch data from backend or localStorage
+                    const result = await window.professionalExportService.exportToPDF({
+                        dateRange: 'Hôm nay'
+                    });
+
+                    if (result && result.success) {
+                        alert(`✅ Đã xuất báo cáo PDF!\nFile: ${result.filename}\nSố trang: ${result.pages}`);
                     } else {
-                        throw new Error('Export service không sẵn sàng');
+                        alert('✅ Đã xuất báo cáo PDF thành công!');
+                    }
+                    
+                    // Log export to backend if authenticated
+                    if (window.apiClient && window.apiClient.isAuthenticated()) {
+                        try {
+                            const today = new Date().toISOString().split('T')[0];
+                            const filename = result?.filename || `report_${Date.now()}.pdf`;
+                            
+                            await fetch(window.apiClient.baseURL + '/exports', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${window.apiClient.token}`
+                                },
+                                body: JSON.stringify({
+                                    exportType: 'pdf',
+                                    dateRangeStart: today,
+                                    dateRangeEnd: today,
+                                    fileName: filename
+                                })
+                            });
+                        } catch (err) {
+                            console.warn('⚠️ Failed to log export:', err);
+                        }
                     }
                 } else if (type === 'csv') {
-                    if (window.exportService) {
-                        await window.exportService.exportToCSV(data, { type: 'emotions', fileName: `emotions-${Date.now()}.csv` });
-                        alert('✅ Đã xuất CSV thành công!');
-                    } else {
-                        throw new Error('CSV export không sẵn sàng');
+                    if (!window.exportService) {
+                        throw new Error('CSV Export Service không sẵn sàng');
                     }
-                }
-                
-                // Lưu lịch sử xuất vào backend
-                if (window.apiClient && window.apiClient.isAuthenticated()) {
-                    const today = new Date().toISOString().split('T')[0];
-                    window.apiClient.logExport(type, today, today, `report_${Date.now()}.${type}`)
-                        .catch(err => console.warn('⚠️ Failed to log export:', err));
+                    
+                    // Collect data for CSV export
+                    const tracker = window.productivityTracker;
+                    if (!tracker) {
+                        throw new Error('Chưa có dữ liệu để xuất');
+                    }
+                    
+                    const emotionHistory = tracker.emotionHistory || [];
+                    const data = {
+                        emotionHistory: emotionHistory,
+                        sessions: tracker.workSessions || [],
+                        notes: tracker.workNotes || []
+                    };
+                    
+                    await window.exportService.exportToCSV(data, { 
+                        type: 'emotions', 
+                        fileName: `emotions-${Date.now()}.csv` 
+                    });
+                    
+                    alert('✅ Đã xuất CSV thành công!');
                 }
             } catch (err) {
                 console.error('Export error:', err);

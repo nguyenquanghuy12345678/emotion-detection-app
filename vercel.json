@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "name": "emotionai",
+  "name": "emotion-detection-app",
   "rewrites": [
     {
       "source": "/api/(.*)",
@@ -8,11 +8,15 @@
     },
     {
       "source": "/",
-      "destination": "/public/index.html"
+      "destination": "/index.html"
+    },
+    {
+      "source": "/(.*\\.(js|css|html|json|png|jpg|jpeg|gif|svg|ico))",
+      "destination": "/$1"
     },
     {
       "source": "/(.*)",
-      "destination": "/$1"
+      "destination": "/index.html"
     }
   ],
   "headers": [
