@@ -11,10 +11,6 @@
       "destination": "/index.html"
     },
     {
-      "source": "/(.*\\.(js|css|html|json|png|jpg|jpeg|gif|svg|ico))",
-      "destination": "/$1"
-    },
-    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
