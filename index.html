@@ -1419,8 +1419,8 @@
             const notesHTML = notes.map((note, index) => `
                 <div class="note-item">
                     <div class="note-content">
-                        <div class="note-text">${note.text || note.note || 'Ghi chú'}</div>
-                        <div class="note-time">${new Date(note.timestamp).toLocaleString('vi-VN')}</div>
+                        <div class="note-text">${note.note_text || note.text || note.note || 'Ghi chú'}</div>
+                        <div class="note-time">${new Date(note.created_at || note.timestamp).toLocaleString('vi-VN')}</div>
                     </div>
                     <button onclick="deleteNote(${index})" class="note-delete">🗑️</button>
                 </div>

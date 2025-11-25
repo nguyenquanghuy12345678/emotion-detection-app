@@ -40,14 +40,14 @@ export default async function handler(req, res) {
     const result = await sql`
       INSERT INTO emotion_history (
         user_id, session_id, emotion, confidence, 
-        focus_score, detected_at
+        focus_score, timestamp
       )
       VALUES (
         ${decoded.userId}, ${sessionId}, ${emotion}, 
         ${confidence || 0}, ${Math.round(focusScore || 0)}, 
         NOW()
       )
-      RETURNING emotion_id, user_id, session_id, emotion, confidence, focus_score, detected_at
+      RETURNING id, user_id, session_id, emotion, confidence, focus_score, timestamp
     `;
 
     res.status(201).json({

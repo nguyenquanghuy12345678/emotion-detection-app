@@ -106,17 +106,17 @@ export default async function handler(req, res) {
         // Get emotions
         const emotions = await sql`
             SELECT 
-                emotion_id,
+                id,
                 session_id,
                 emotion,
                 confidence,
                 focus_score,
-                detected_at
+                timestamp
             FROM emotion_history
             WHERE user_id = ${userId}
-            AND DATE(detected_at) >= ${start}
-            AND DATE(detected_at) <= ${end}
-            ORDER BY detected_at DESC
+            AND DATE(timestamp) >= ${start}
+            AND DATE(timestamp) <= ${end}
+            ORDER BY timestamp DESC
             LIMIT 500
         `;
 
@@ -228,7 +228,7 @@ export default async function handler(req, res) {
                 emotion: e.emotion,
                 confidence: e.confidence,
                 focusScore: e.focus_score,
-                timestamp: e.detected_at,
+                timestamp: e.timestamp,
                 sessionId: e.session_id
             })),
             workSessions: sessions.map(s => ({
