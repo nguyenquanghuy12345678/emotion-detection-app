@@ -405,11 +405,16 @@
             <!-- Quick Actions -->
             <div class="section-card">
                 <h2>⚡ Hành Động Nhanh</h2>
+                <p class="export-note" style="font-size: 0.85em; color: #666; margin: 10px 0; padding: 10px; background: #f0f0f0; border-radius: 5px; border-left: 3px solid #ffa500;">
+                    ⚠️ Chỉ có thể xuất báo cáo khi:
+                    <br>• Đã đăng nhập vào hệ thống
+                    <br>• Đã kết thúc phiên làm việc (camera đã dừng)
+                </p>
                 <div class="quick-actions">
-                    <button onclick="exportProductivityReport('pdf')" class="action-btn">
+                    <button id="exportPdfBtn" onclick="exportProductivityReport('pdf')" class="action-btn export-btn" disabled title="Vui lòng đăng nhập và kết thúc phiên làm việc">
                         📄 Xuất PDF
                     </button>
-                    <button onclick="exportProductivityReport('csv')" class="action-btn">
+                    <button id="exportCsvBtn" onclick="exportProductivityReport('csv')" class="action-btn export-btn" disabled title="Vui lòng đăng nhập và kết thúc phiên làm việc">
                         📊 Xuất CSV
                     </button>
                     <button onclick="if(window.productivityTracker && confirm('Xóa tất cả dữ liệu?')) window.productivityTracker.resetData()" class="action-btn danger">
@@ -1728,6 +1733,12 @@
             
             // Initialize authentication UI
             initAuthUI();
+            
+            // Initialize export buttons state
+            setTimeout(() => {
+                updateExportButtons();
+                console.log('✅ Export buttons state initialized');
+            }, 500);
         });
         
         // ============================================
@@ -1792,14 +1803,32 @@
             try {
                 console.log('📊 Starting export process...');
                 
+                // CRITICAL: Kiểm tra đăng nhập
+                if (!window.apiClient || !window.apiClient.isAuthenticated()) {
+                    alert('⚠️ Vui lòng đăng nhập để xuất báo cáo!');
+                    showAuthModal();
+                    return;
+                }
+
+                // CRITICAL: Kiểm tra phiên làm việc đã kết thúc
+                if (window.emotionApp && window.emotionApp.isRunning) {
+                    alert('⚠️ Vui lòng kết thúc phiên làm việc trước khi xuất báo cáo!\n\nNhấn nút "Dừng" để kết thúc phiên làm việc.');
+                    return;
+                }
+                
                 if (type === 'pdf') {
                     // Use Professional Export Service with real data
                     if (!window.professionalExportService) {
                         throw new Error('Professional Export Service không sẵn sàng');
                     }
 
-                    // Export will automatically fetch data from backend or localStorage
+                    const user = window.apiClient.getCurrentUser();
+                    
+                    // Export will automatically fetch data from backend
                     const result = await window.professionalExportService.exportToPDF({
+                        userName: user.full_name || user.email,
+                        email: user.email,
+                        userId: user.id,
                         dateRange: 'Hôm nay'
                     });
 
@@ -1809,51 +1838,78 @@
                         alert('✅ Đã xuất báo cáo PDF thành công!');
                     }
                     
-                    // Log export to backend if authenticated
-                    if (window.apiClient && window.apiClient.isAuthenticated()) {
-                        try {
-                            const today = new Date().toISOString().split('T')[0];
-                            const filename = result?.filename || `report_${Date.now()}.pdf`;
-                            
-                            await fetch(window.apiClient.baseURL + '/exports', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'Authorization': `Bearer ${window.apiClient.token}`
-                                },
-                                body: JSON.stringify({
-                                    exportType: 'pdf',
-                                    dateRangeStart: today,
-                                    dateRangeEnd: today,
-                                    fileName: filename
-                                })
-                            });
-                        } catch (err) {
-                            console.warn('⚠️ Failed to log export:', err);
-                        }
+                    // Log export to backend
+                    try {
+                        const today = new Date().toISOString().split('T')[0];
+                        const filename = result?.filename || `report_${Date.now()}.pdf`;
+                        
+                        await fetch(window.apiClient.baseURL + '/exports', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${window.apiClient.token}`
+                            },
+                            body: JSON.stringify({
+                                exportType: 'pdf',
+                                dateRangeStart: today,
+                                dateRangeEnd: today,
+                                fileName: filename
+                            })
+                        });
+                        console.log('✅ Export logged to database');
+                    } catch (err) {
+                        console.warn('⚠️ Failed to log export:', err);
                     }
                 } else if (type === 'csv') {
                     if (!window.exportService) {
                         throw new Error('CSV Export Service không sẵn sàng');
                     }
                     
-                    // Collect data for CSV export
-                    const tracker = window.productivityTracker;
-                    if (!tracker) {
-                        throw new Error('Chưa có dữ liệu để xuất');
+                    const user = window.apiClient.getCurrentUser();
+                    
+                    // Fetch data from backend
+                    const response = await fetch(window.apiClient.baseURL + '/productivity/stats', {
+                        headers: {
+                            'Authorization': `Bearer ${window.apiClient.token}`
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('Không thể tải dữ liệu từ server');
                     }
                     
-                    const emotionHistory = tracker.emotionHistory || [];
+                    const result = await response.json();
                     const data = {
-                        emotionHistory: emotionHistory,
-                        sessions: tracker.workSessions || [],
-                        notes: tracker.workNotes || []
+                        emotionHistory: result.data.emotionHistory || [],
+                        sessions: result.data.workSessions || [],
+                        notes: result.data.workNotes || [],
+                        user: user
                     };
                     
                     await window.exportService.exportToCSV(data, { 
                         type: 'emotions', 
-                        fileName: `emotions-${Date.now()}.csv` 
+                        fileName: `emotions-${user.full_name || 'user'}-${Date.now()}.csv` 
                     });
+                    
+                    // Log export to backend
+                    try {
+                        const today = new Date().toISOString().split('T')[0];
+                        await fetch(window.apiClient.baseURL + '/exports', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${window.apiClient.token}`
+                            },
+                            body: JSON.stringify({
+                                exportType: 'csv',
+                                dateRangeStart: today,
+                                dateRangeEnd: today,
+                                fileName: `emotions-${user.full_name || 'user'}-${Date.now()}.csv`
+                            })
+                        });
+                    } catch (err) {
+                        console.warn('⚠️ Failed to log CSV export:', err);
+                    }
                     
                     alert('✅ Đã xuất CSV thành công!');
                 }
@@ -1861,6 +1917,54 @@
                 console.error('Export error:', err);
                 alert('❌ Lỗi xuất file: ' + err.message);
             }
+        }
+        
+        // ===== UPDATE EXPORT BUTTONS STATE =====
+        function updateExportButtons() {
+            const isAuthenticated = window.apiClient && window.apiClient.isAuthenticated();
+            const isSessionActive = window.emotionApp && window.emotionApp.isRunning;
+            
+            const exportPdfBtn = document.getElementById('exportPdfBtn');
+            const exportCsvBtn = document.getElementById('exportCsvBtn');
+            
+            if (!exportPdfBtn || !exportCsvBtn) {
+                console.warn('⚠️ Export buttons not found');
+                return;
+            }
+            
+            if (!isAuthenticated) {
+                // Not logged in - disable both buttons
+                exportPdfBtn.disabled = true;
+                exportCsvBtn.disabled = true;
+                exportPdfBtn.title = 'Vui lòng đăng nhập để xuất báo cáo';
+                exportCsvBtn.title = 'Vui lòng đăng nhập để xuất dữ liệu';
+                exportPdfBtn.style.opacity = '0.5';
+                exportCsvBtn.style.opacity = '0.5';
+                exportPdfBtn.style.cursor = 'not-allowed';
+                exportCsvBtn.style.cursor = 'not-allowed';
+            } else if (isSessionActive) {
+                // Logged in but session is running - disable
+                exportPdfBtn.disabled = true;
+                exportCsvBtn.disabled = true;
+                exportPdfBtn.title = 'Vui lòng kết thúc phiên làm việc trước khi xuất';
+                exportCsvBtn.title = 'Vui lòng kết thúc phiên làm việc trước khi xuất';
+                exportPdfBtn.style.opacity = '0.5';
+                exportCsvBtn.style.opacity = '0.5';
+                exportPdfBtn.style.cursor = 'not-allowed';
+                exportCsvBtn.style.cursor = 'not-allowed';
+            } else {
+                // Logged in and session ended - enable
+                exportPdfBtn.disabled = false;
+                exportCsvBtn.disabled = false;
+                exportPdfBtn.title = 'Xuất báo cáo PDF';
+                exportCsvBtn.title = 'Xuất dữ liệu CSV';
+                exportPdfBtn.style.opacity = '1';
+                exportCsvBtn.style.opacity = '1';
+                exportPdfBtn.style.cursor = 'pointer';
+                exportCsvBtn.style.cursor = 'pointer';
+            }
+            
+            console.log(`🔄 Export buttons updated - Auth: ${isAuthenticated}, Session: ${isSessionActive}, Enabled: ${!exportPdfBtn.disabled}`);
         }
         
         // ============================================
@@ -1919,6 +2023,9 @@
                 showUserInfo(result.user);
                 closeAuthModal();
                 
+                // Update export buttons state
+                updateExportButtons();
+                
                 // Reload to refresh app state
                 setTimeout(() => window.location.reload(), 500);
             } catch (error) {
@@ -1953,6 +2060,9 @@
                 showUserInfo(result.user);
                 closeAuthModal();
                 
+                // Update export buttons state
+                updateExportButtons();
+                
                 // Reload to refresh app state
                 setTimeout(() => window.location.reload(), 500);
             } catch (error) {
@@ -1964,6 +2074,10 @@
             if (window.apiClient) {
                 window.apiClient.logout();
             }
+            
+            // Update export buttons state
+            updateExportButtons();
+            
             showGuestMode();
             window.location.reload();
         }

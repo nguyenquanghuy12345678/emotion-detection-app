@@ -145,6 +145,11 @@ class EmotionDetectionApp {
         document.getElementById('stopBtn').disabled = false;
         this.updateStatus('Đang nhận diện cảm xúc...', false);
         
+        // Update export buttons - disable during session
+        if (typeof updateExportButtons === 'function') {
+            updateExportButtons();
+        }
+        
         this.startDetectionLoop();
         this.startFpsCounter();
     }
@@ -179,6 +184,11 @@ class EmotionDetectionApp {
         document.getElementById('fps').textContent = '0';
         
         this.updateStatus('Đã dừng. Nhấn "Bắt Đầu" để tiếp tục.', false);
+        
+        // Update export buttons - enable after session ends
+        if (typeof updateExportButtons === 'function') {
+            updateExportButtons();
+        }
     }
 
     // Start detection loop

@@ -456,6 +456,20 @@ body {
     box-shadow: 0 6px 20px rgba(255, 107, 107, 0.6);
 }
 
+/* Export Button Disabled State */
+.export-btn:disabled {
+    opacity: 0.5 !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+    background: linear-gradient(135deg, #999 0%, #666 100%) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+}
+
+.export-btn:disabled:hover {
+    transform: none !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+}
+
 /* Emotion Chart */
 .emotion-chart {
     padding: 10px 0;
