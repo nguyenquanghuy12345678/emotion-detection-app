@@ -158,42 +158,39 @@ export default async function handler(req, res) {
             disgusted: 0
         };
 
+        // Calculate REAL time intervals from timestamps
         emotions.forEach((emotion, index) => {
             const emotionName = emotion.emotion;
             emotionDistribution[emotionName] = (emotionDistribution[emotionName] || 0) + 1;
             
-            // Calculate time between emotions (assuming 10s interval)
-            const timeInterval = 10;
-            
-            if (emotionTimes[emotionName] !== undefined) {
-                emotionTimes[emotionName] += timeInterval;
-            }
-            
-            // Add focus/distracted time from emotions
-            if (index > 0) { // Skip first to avoid double counting
-                const emotionFocus = emotion.focus_score || 0;
-                if (emotionFocus >= 70 && totalWorkTime === 0) {
-                    focusedTime += timeInterval;
-                } else if (emotionFocus < 70 && totalWorkTime === 0) {
-                    distractedTime += timeInterval;
-                }
+            // Calculate ACTUAL time interval from timestamps
+            if (index < emotions.length - 1) {
+                const currentTime = new Date(emotion.timestamp);
+                const nextTime = new Date(emotions[index + 1].timestamp);
+                const actualInterval = Math.abs((currentTime - nextTime) / 1000); // seconds
                 
-                if (totalWorkTime === 0) {
-                    totalWorkTime += timeInterval;
+                if (emotionTimes[emotionName] !== undefined && actualInterval < 60) {
+                    // Only count if interval is reasonable (< 60s)
+                    emotionTimes[emotionName] += actualInterval;
                 }
             }
         });
 
-        // Calculate emotion-based times
-        const happyTime = emotionTimes.happy || 0;
-        const stressTime = (emotionTimes.angry || 0) + (emotionTimes.fearful || 0);
+        // Calculate emotion-based times from REAL data
+        const happyTime = Math.round(emotionTimes.happy || 0);
+        const stressTime = Math.round((emotionTimes.angry || 0) + (emotionTimes.fearful || 0));
 
-        // Calculate averages
-        const averageFocusScore = focusScoreCount > 0 
-            ? Math.round(totalFocusScore / focusScoreCount) 
-            : (emotions.length > 0 
-                ? Math.round(emotions.reduce((sum, e) => sum + (e.focus_score || 0), 0) / emotions.length)
-                : 0);
+        // Calculate average focus score from REAL session data
+        let averageFocusScore = 0;
+        if (focusScoreCount > 0) {
+            // Use session-based average (most accurate)
+            averageFocusScore = Math.round(totalFocusScore / focusScoreCount);
+        } else if (emotions.length > 0) {
+            // Fallback to emotion-based average
+            const emotionFocusSum = emotions.reduce((sum, e) => sum + (e.focus_score || 0), 0);
+            averageFocusScore = Math.round(emotionFocusSum / emotions.length);
+        }
+        // If still 0 and no data, it stays 0 (accurate!)
 
         // Get notes
         const notes = await sql`

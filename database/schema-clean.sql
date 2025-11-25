@@ -227,14 +227,14 @@ GROUP BY user_id, emotion, DATE(timestamp);
 
 -- Function to update session duration when ended
 CREATE OR REPLACE FUNCTION update_session_duration()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER AS $function$
 BEGIN
     IF NEW.end_time IS NOT NULL AND OLD.end_time IS NULL THEN
         NEW.duration_seconds = EXTRACT(EPOCH FROM (NEW.end_time - NEW.start_time))::INTEGER;
     END IF;
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$function$ LANGUAGE plpgsql;
 
 CREATE TRIGGER trigger_update_session_duration
 BEFORE UPDATE ON work_sessions
@@ -243,12 +243,12 @@ EXECUTE FUNCTION update_session_duration();
 
 -- Function to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER AS $function$
 BEGIN
     NEW.updated_at = CURRENT_TIMESTAMP;
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$function$ LANGUAGE plpgsql;
 
 CREATE TRIGGER trigger_users_updated_at
 BEFORE UPDATE ON users
