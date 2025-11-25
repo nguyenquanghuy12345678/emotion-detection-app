@@ -106,16 +106,18 @@ export default async function handler(req, res) {
         // Get emotions
         const emotions = await sql`
             SELECT 
+                emotion_id,
+                session_id,
                 emotion,
                 confidence,
                 focus_score,
-                timestamp,
-                metadata
+                detected_at
             FROM emotion_history
             WHERE user_id = ${userId}
-            AND DATE(timestamp) >= ${start}
-            AND DATE(timestamp) <= ${end}
-            ORDER BY timestamp DESC
+            AND DATE(detected_at) >= ${start}
+            AND DATE(detected_at) <= ${end}
+            ORDER BY detected_at DESC
+            LIMIT 500
         `;
 
         // Calculate statistics
@@ -226,7 +228,8 @@ export default async function handler(req, res) {
                 emotion: e.emotion,
                 confidence: e.confidence,
                 focusScore: e.focus_score,
-                timestamp: e.timestamp
+                timestamp: e.detected_at,
+                sessionId: e.session_id
             })),
             workSessions: sessions.map(s => ({
                 id: s.id,

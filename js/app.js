@@ -320,12 +320,13 @@ class EmotionDetectionApp {
         
         // ===== BACKEND SYNC - LƯU VÀO DATABASE =====
         if (window.apiClient && window.apiClient.isAuthenticated() && faceDetected) {
-            // Throttle backend sync (only save every 10 seconds to avoid overload)
-            if (!this.lastBackendSync || Date.now() - this.lastBackendSync > 10000) {
+            // Throttle backend sync (only save every 5 seconds to collect more data)
+            if (!this.lastBackendSync || Date.now() - this.lastBackendSync > 5000) {
                 const focusScore = window.productivityTracker?.focusScore || 0;
                 const sessionId = window.currentSessionId;
                 
                 if (sessionId) {
+                    console.log(`💾 Saving emotion to backend - Session: ${sessionId}, Emotion: ${emotion}, Focus: ${Math.round(focusScore)}`);
                     window.apiClient.saveEmotion(
                         sessionId,
                         emotion,

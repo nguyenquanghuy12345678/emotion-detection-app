@@ -36,18 +36,18 @@ export default async function handler(req, res) {
 
     const sql = neon(process.env.DATABASE_URL);
 
-    // Save emotion
+    // Save emotion to emotion_history table
     const result = await sql`
-      INSERT INTO emotions (
+      INSERT INTO emotion_history (
         user_id, session_id, emotion, confidence, 
-        focus_score, metadata, timestamp
+        focus_score, detected_at
       )
       VALUES (
         ${decoded.userId}, ${sessionId}, ${emotion}, 
-        ${confidence || 0}, ${focusScore || 0}, 
-        ${JSON.stringify(metadata || {})}, NOW()
+        ${confidence || 0}, ${Math.round(focusScore || 0)}, 
+        NOW()
       )
-      RETURNING *
+      RETURNING emotion_id, user_id, session_id, emotion, confidence, focus_score, detected_at
     `;
 
     res.status(201).json({
