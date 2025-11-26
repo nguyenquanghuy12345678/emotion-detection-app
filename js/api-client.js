@@ -218,9 +218,10 @@ class APIClient {
     }
 
     async getEmotionHistory(startDate, endDate, limit = 1000) {
+        const dateRange = TIMEZONE_UTILS.getDateRange(7);
         const params = new URLSearchParams({
-            startDate: startDate || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-            endDate: endDate || new Date().toISOString(),
+            startDate: startDate || dateRange.startDate,
+            endDate: endDate || dateRange.endDate,
             limit: limit.toString()
         });
         return await this.request('GET', `/emotions?${params}`);
@@ -228,7 +229,7 @@ class APIClient {
 
     async getEmotionDistribution(date) {
         const params = new URLSearchParams({
-            date: date || new Date().toISOString().split('T')[0]
+            date: date || TIMEZONE_UTILS.toDateStringGMT7()
         });
         return await this.request('GET', `/emotions/distribution?${params}`);
     }
@@ -243,15 +244,16 @@ class APIClient {
 
     async getDailyStats(date) {
         const params = new URLSearchParams({
-            date: date || new Date().toISOString().split('T')[0]
+            date: date || TIMEZONE_UTILS.toDateStringGMT7()
         });
         return await this.request('GET', `/stats/daily?${params}`);
     }
 
     async getStatsRange(startDate, endDate) {
+        const dateRange = TIMEZONE_UTILS.getDateRange(30);
         const params = new URLSearchParams({
-            startDate: startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-            endDate: endDate || new Date().toISOString().split('T')[0]
+            startDate: startDate || dateRange.startDateString,
+            endDate: endDate || dateRange.endDateString
         });
         return await this.request('GET', `/stats/range?${params}`);
     }
@@ -381,7 +383,7 @@ class APIClient {
                 console.log('🔄 Auto-syncing data...');
                 
                 // Sync today's stats
-                const today = new Date().toISOString().split('T')[0];
+                const today = TIMEZONE_UTILS.toDateStringGMT7();
                 const stats = window.productivityTracker?.getCurrentStats();
                 
                 if (stats) {

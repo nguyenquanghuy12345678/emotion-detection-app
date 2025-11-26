@@ -23,7 +23,7 @@ async function initDatabase() {
         console.log('✅ Connected to Neon Database\n');
 
         // Read schema file
-        const schemaPath = path.join(__dirname, 'database', 'schema-clean.sql');
+        const schemaPath = path.join(__dirname, '..', 'database', 'schema-clean.sql');
         const schemaSql = fs.readFileSync(schemaPath, 'utf8');
         
         console.log('📖 Reading schema-clean.sql...\n');

@@ -7,6 +7,7 @@ const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const TIMEZONE_UTILS = require('./server-timezone-utils');
 require('dotenv').config();
 
 const db = require('./database/database');
@@ -25,7 +26,7 @@ app.use(express.static('.')); // Serve static files from root
 
 // Request logging
 app.use((req, res, next) => {
-    console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+    console.log(`${TIMEZONE_UTILS.toISOStringGMT7()} - ${req.method} ${req.path}`);
     next();
 });
 
@@ -535,7 +536,7 @@ app.get('/api/health', async (req, res) => {
 });
 
 app.get('/api/ping', (req, res) => {
-    res.json({ message: 'pong', timestamp: new Date().toISOString() });
+    res.json({ message: 'pong', timestamp: TIMEZONE_UTILS.toISOStringGMT7() });
 });
 
 // ============================================

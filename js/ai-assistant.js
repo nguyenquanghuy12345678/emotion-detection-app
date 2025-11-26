@@ -208,12 +208,12 @@ class AIAssistant {
     provideContextualSuggestions() {
         if (!this.autoMode.suggestions) return;
         
-        const now = new Date();
+        const now = TIMEZONE_UTILS.nowGMT7();
         const hour = now.getHours();
         const minute = now.getMinutes();
         
         // Gợi ý theo thời gian (chỉ 1 lần/ngày)
-        const todayKey = now.toDateString();
+        const todayKey = TIMEZONE_UTILS.toDateStringGMT7();
         
         if (!this.suggestionCache) {
             this.suggestionCache = {};
@@ -283,7 +283,7 @@ class AIAssistant {
             </div>
             <div class="alert-message">${message.replace(/\n/g, '<br>')}</div>
             <div class="alert-footer">
-                <small>${new Date().toLocaleTimeString('vi-VN')}</small>
+                <small>${TIMEZONE_UTILS.toLocaleTimeString()}</small>
             </div>
         `;
         
@@ -629,10 +629,7 @@ class AIAssistant {
         const messageDiv = document.createElement('div');
         messageDiv.className = `chat-message chat-message-${sender}`;
         
-        const time = new Date().toLocaleTimeString('vi-VN', { 
-            hour: '2-digit', 
-            minute: '2-digit' 
-        });
+        const time = TIMEZONE_UTILS.toLocaleTimeString();
         
         messageDiv.innerHTML = `
             <div class="message-avatar">${sender === 'user' ? '👤' : '🤖'}</div>

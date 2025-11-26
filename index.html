@@ -859,6 +859,7 @@
         });
     </script>
     
+    <script src="js/timezone-utils.js"></script>
     <script src="js/config.js"></script>
     <script src="js/emotions.js"></script>
     <script src="js/export-service.js"></script>
@@ -1683,7 +1684,7 @@
                             <span class="timeline-emoji">${emoji}</span>
                             <span class="timeline-emotion">${item.emotion}</span>
                             <span class="timeline-score">Tập trung: ${item.focusScore}/100</span>
-                            <span class="timeline-time">${date.toLocaleTimeString('vi-VN')}</span>
+                            <span class="timeline-time">${TIMEZONE_UTILS.toLocaleTimeString(date)}</span>
                         </div>
                     </div>
                 `;

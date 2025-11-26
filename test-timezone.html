@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Timezone GMT+7</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-group {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+        }
+        .test-item {
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+        }
+        .label {
+            color: #ffd700;
+            font-weight: bold;
+            display: inline-block;
+            width: 200px;
+        }
+        .value {
+            color: #00ff00;
+        }
+        button {
+            background: #00ff00;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 5px;
+        }
+        button:hover {
+            background: #00cc00;
+        }
+        .realtime {
+            font-size: 24px;
+            text-align: center;
+            margin: 20px 0;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌏 Test Timezone GMT+7 (Vietnam)</h1>
+        
+        <div class="realtime" id="realtimeClock"></div>
+        
+        <div class="test-group">
+            <h2>⏰ Thời gian hiện tại</h2>
+            <div class="test-item">
+                <span class="label">System Time:</span>
+                <span class="value" id="systemTime"></span>
+            </div>
+            <div class="test-item">
+                <span class="label">GMT+7 Time:</span>
+                <span class="value" id="gmt7Time"></span>
+            </div>
+            <div class="test-item">
+                <span class="label">Vietnamese Format:</span>
+                <span class="value" id="vnFormat"></span>
+            </div>
+            <div class="test-item">
+                <span class="label">Current Hour (GMT+7):</span>
+                <span class="value" id="currentHour"></span>
+            </div>
+            <div class="test-item">
+                <span class="label">Greeting:</span>
+                <span class="value" id="greeting"></span>
+            </div>
+        </div>
+        
+        <div class="test-group">
+            <h2>📅 Định dạng ngày tháng</h2>
+            <div class="test-item">
+                <span class="label">ISO String (GMT+7):</span>
+                <span class="value" id="isoString"></span>
+            </div>
+            <div class="test-item">
+                <span class="label">Date String (GMT+7):</span>
+                <span class="value" id="dateString"></span>
+            </div>
+            <div class="test-item">
+                <span class="label">Vietnamese Date:</span>
+                <span class="value" id="vnDate"></span>
+            </div>
+            <div class="test-item">
+                <span class="label">Vietnamese DateTime:</span>
+                <span class="value" id="vnDateTime"></span>
+            </div>
+        </div>
+        
+        <div class="test-group">
+            <h2>📊 Khoảng thời gian</h2>
+            <div class="test-item">
+                <span class="label">Last 7 days:</span>
+                <span class="value" id="last7days"></span>
+            </div>
+            <div class="test-item">
+                <span class="label">Last 30 days:</span>
+                <span class="value" id="last30days"></span>
+            </div>
+        </div>
+        
+        <div class="test-group">
+            <h2>⏱️ Định dạng thời lượng</h2>
+            <div class="test-item">
+                <span class="label">65 giây:</span>
+                <span class="value" id="dur65"></span>
+            </div>
+            <div class="test-item">
+                <span class="label">3665 giây:</span>
+                <span class="value" id="dur3665"></span>
+            </div>
+            <div class="test-item">
+                <span class="label">7325 giây:</span>
+                <span class="value" id="dur7325"></span>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 20px;">
+            <button onclick="updateAll()">🔄 Refresh All</button>
+            <button onclick="testConversion()">🧪 Test Conversion</button>
+            <button onclick="window.location.href='index.html'">🏠 Back to App</button>
+        </div>
+        
+        <div id="conversionResult" style="margin-top: 20px;"></div>
+    </div>
+    
+    <script src="js/timezone-utils.js"></script>
+    <script>
+        function updateAll() {
+            // Current time
+            document.getElementById('systemTime').textContent = new Date().toString();
+            document.getElementById('gmt7Time').textContent = TIMEZONE_UTILS.nowGMT7().toString();
+            document.getElementById('vnFormat').textContent = TIMEZONE_UTILS.toLocaleDateTimeString();
+            document.getElementById('currentHour').textContent = TIMEZONE_UTILS.getCurrentHour() + ':00';
+            document.getElementById('greeting').textContent = TIMEZONE_UTILS.getGreeting();
+            
+            // Date formats
+            document.getElementById('isoString').textContent = TIMEZONE_UTILS.toISOStringGMT7();
+            document.getElementById('dateString').textContent = TIMEZONE_UTILS.toDateStringGMT7();
+            document.getElementById('vnDate').textContent = TIMEZONE_UTILS.toLocaleDateString();
+            document.getElementById('vnDateTime').textContent = TIMEZONE_UTILS.toLocaleDateTimeString();
+            
+            // Date ranges
+            const range7 = TIMEZONE_UTILS.getDateRange(7);
+            document.getElementById('last7days').textContent = 
+                `${range7.startDateString} to ${range7.endDateString}`;
+            
+            const range30 = TIMEZONE_UTILS.getDateRange(30);
+            document.getElementById('last30days').textContent = 
+                `${range30.startDateString} to ${range30.endDateString}`;
+            
+            // Durations
+            document.getElementById('dur65').textContent = TIMEZONE_UTILS.formatDuration(65);
+            document.getElementById('dur3665').textContent = TIMEZONE_UTILS.formatDuration(3665);
+            document.getElementById('dur7325').textContent = TIMEZONE_UTILS.formatDuration(7325);
+        }
+        
+        function updateClock() {
+            const now = TIMEZONE_UTILS.nowGMT7();
+            const timeString = now.toLocaleTimeString('vi-VN', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            });
+            const dateString = now.toLocaleDateString('vi-VN', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            
+            document.getElementById('realtimeClock').innerHTML = 
+                `${timeString}<br><small style="font-size: 14px;">${dateString}</small>`;
+        }
+        
+        function testConversion() {
+            const testDate = new Date('2025-01-01T00:00:00Z'); // UTC midnight
+            const gmt7Date = TIMEZONE_UTILS.toGMT7(testDate);
+            
+            const result = document.getElementById('conversionResult');
+            result.innerHTML = `
+                <div class="test-group">
+                    <h3>🧪 Test: UTC 2025-01-01 00:00:00 → GMT+7</h3>
+                    <div class="test-item">
+                        <span class="label">Input (UTC):</span>
+                        <span class="value">${testDate.toISOString()}</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="label">Output (GMT+7):</span>
+                        <span class="value">${gmt7Date.toISOString()}</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="label">Vietnamese Format:</span>
+                        <span class="value">${TIMEZONE_UTILS.toLocaleDateTimeString(testDate)}</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="label">Expected:</span>
+                        <span class="value">2025-01-01T07:00:00 (7 hours ahead)</span>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Initialize
+        updateAll();
+        updateClock();
+        
+        // Update clock every second
+        setInterval(updateClock, 1000);
+        
+        console.log('🌏 Timezone Test Page Loaded');
+        console.log('System timezone offset:', new Date().getTimezoneOffset());
+        console.log('GMT+7 current time:', TIMEZONE_UTILS.nowGMT7());
+    </script>
+</body>
+</html>

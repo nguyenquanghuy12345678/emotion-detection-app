@@ -106,6 +106,14 @@ class ProductivityTracker {
             this.stats.currentSessionTime = 0;
             this.saveData();
             console.log('⏹️ Productivity session ended');
+            
+            // Hiển thị thông báo và cập nhật export buttons
+            this.showSessionEndNotification(sessionDuration);
+            
+            // Cập nhật trạng thái export buttons
+            if (typeof updateExportButtons === 'function') {
+                updateExportButtons();
+            }
         }
     }
     
@@ -660,6 +668,92 @@ class ProductivityTracker {
         a.download = `productivity-report-${Date.now()}.json`;
         a.click();
         URL.revokeObjectURL(url);
+    }
+    
+    // ============================================
+    // NOTIFICATION KHI KẾT THÚC PHIÊN LÀM VIỆC
+    // ============================================
+    
+    showSessionEndNotification(sessionDuration) {
+        // Format thời lượng
+        const hours = Math.floor(sessionDuration / 3600);
+        const minutes = Math.floor((sessionDuration % 3600) / 60);
+        const seconds = sessionDuration % 60;
+        
+        let durationText = '';
+        if (hours > 0) durationText += `${hours} giờ `;
+        if (minutes > 0) durationText += `${minutes} phút `;
+        if (seconds > 0 || durationText === '') durationText += `${seconds} giây`;
+        
+        // Tạo notification
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            z-index: 10000;
+            text-align: center;
+            max-width: 500px;
+            animation: slideIn 0.3s ease-out;
+        `;
+        
+        notification.innerHTML = `
+            <div style="font-size: 48px; margin-bottom: 15px;">🎉</div>
+            <h2 style="margin: 0 0 10px 0; font-size: 24px;">Phiên làm việc đã kết thúc!</h2>
+            <p style="margin: 10px 0; font-size: 16px;">
+                Thời lượng làm việc: <strong>${durationText}</strong>
+            </p>
+            <p style="margin: 10px 0; font-size: 16px;">
+                Điểm tập trung: <strong>${Math.round(this.focusScore)}/100</strong>
+            </p>
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.3);">
+                <p style="font-size: 14px; margin: 10px 0;">
+                    ✨ Bạn có thể xuất báo cáo PDF ngay bây giờ!
+                </p>
+                <button onclick="this.parentElement.parentElement.parentElement.remove(); exportProductivityReport('pdf')" 
+                        style="background: #00ff00; color: #000; border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; margin: 5px;">
+                    📄 Xuất PDF ngay
+                </button>
+                <button onclick="this.parentElement.parentElement.parentElement.remove()" 
+                        style="background: rgba(255,255,255,0.2); color: white; border: 1px solid white; padding: 12px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; margin: 5px;">
+                    Đóng
+                </button>
+            </div>
+        `;
+        
+        // Thêm animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from {
+                    opacity: 0;
+                    transform: translate(-50%, -60%);
+                }
+                to {
+                    opacity: 1;
+                    transform: translate(-50%, -50%);
+                }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        document.body.appendChild(notification);
+        
+        // Tự động đóng sau 10 giây
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.style.animation = 'slideOut 0.3s ease-in';
+                setTimeout(() => notification.remove(), 300);
+            }
+        }, 10000);
+        
+        console.log('✅ Session end notification displayed');
     }
 }
 

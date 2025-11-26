@@ -423,7 +423,7 @@ class ProfessionalExportService {
 
             // Show recent 10 emotions
             const recentEmotions = data.emotionHistory.slice(-10).map((record, index) => {
-                const time = new Date(record.timestamp || Date.now()).toLocaleTimeString('vi-VN');
+                const time = TIMEZONE_UTILS.toLocaleTimeString(record.timestamp || new Date());
                 const emoji = this.emotionEmojis[record.emotion] || '🤖';
                 const translated = this.emotionTranslations[record.emotion] || record.emotion;
                 const confidence = (record.confidence * 100).toFixed(1);

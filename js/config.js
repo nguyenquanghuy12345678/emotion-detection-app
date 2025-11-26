@@ -17,6 +17,10 @@ const CONFIG = {
     // Emotion thresholds
     EMOTION_THRESHOLD: 0.6,
     
+    // Timezone settings
+    TIMEZONE: 'Asia/Ho_Chi_Minh', // Vietnam timezone
+    TIMEZONE_OFFSET: 7, // GMT+7
+    
     // Production settings
     ENABLE_HTTPS_CHECK: true, // Check if running on HTTPS in production
     ENABLE_DEBUG_LOG: false    // Disable console logs in production
