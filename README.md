@@ -1,111 +1,139 @@
-﻿#  Emotion Detection & Productivity Tracker
+﻿# 🎭 AI Emotion Detection - Camera Realtime Mode
 
-> AI-powered emotion detection with real-time productivity tracking and analytics
+## ✨ Tính năng chính
 
-##  Features
+- ✅ **Auto-start khi phát hiện người**: Camera tự động bắt đầu tracking khi phát hiện khuôn mặt (2 giây delay)
+- ✅ **Realtime tracking**: Lưu cảm xúc mỗi 10 giây vào Neon database
+- ✅ **Xác nhận dừng**: Dialog xác nhận trước khi dừng phiên làm việc
+- ✅ **Timezone Việt Nam**: Tất cả timestamp sử dụng UTC+7 (Asia/Ho_Chi_Minh)
+- ✅ **4 bảng đơn giản**: users, work_sessions, emotion_history, work_notes
 
--  Real-time emotion detection via webcam
-- 📊 Productivity tracking with focus scores  
--  Work notes and session management
--  Comprehensive analytics dashboard
--  PDF/CSV export with authentication
--  JWT authentication & secure API
+## 🚀 Deploy lên Vercel
 
-##  Project Structure
+### Quick Deploy:
+1. Push repo lên GitHub
+2. Import vào Vercel: https://vercel.com/new
+3. Thêm Environment Variables:
+   ```
+   DATABASE_URL=postgresql://user:pass@host/db?sslmode=require
+   JWT_SECRET=your-secret-key-min-32-chars
+   NODE_ENV=production
+   ```
+4. Deploy! (1-2 phút)
 
-\\\
-emotion-detection-app/
- api/          # Serverless API endpoints
- css/          # Stylesheets
- js/           # Frontend JavaScript
- database/     # Database schemas
- models/       # Face-API.js models
- scripts/      # Utility scripts
- test/         # Test files
- docs/         # Documentation
- backup/       # Backup files
-\\\
-
-##  Quick Start
-
-1. **Install dependencies**
-   \\\ash
-   npm install
-   \\\
-
-2. **Setup environment**
-   \\\ash
-   cp .env.example .env
-   # Edit .env with your DATABASE_URL and JWT_SECRET
-   \\\
-
-3. **Initialize database**
-   \\\ash
-   node scripts/init-clean-db.js
-   \\\
-
-4. **Start server**
-   \\\ash
-   npm run dev
-   \\\
-
-5. **Open browser**
-   \\\
-   http://localhost:3000
-   \\\
-
-### Demo Account
-\\\
-Email: demo@emotiontracker.com
-Password: demo123
-\\\
-
-##  Usage
-
-1. Login with demo account
-2. Start work session
-3. Camera detects emotions every 5s
-4. Add notes during session
-5. End session when done
-6. Export PDF/CSV report
-
-##  Tech Stack
-
-**Frontend:** HTML5, CSS3, Vanilla JS, Face-API.js  
-**Backend:** Node.js, Express, Vercel Serverless  
-**Database:** Neon PostgreSQL  
-**Auth:** JWT + Bcrypt
-
-##  Documentation
-
-- [Database Guide](docs/DATABASE-FIX.md)
-- [Deployment Guide](docs/DEPLOY-VERCEL.md)
-- [User Guide](docs/HUONG-DAN-SU-DUNG.md)
-- [Testing Guide](docs/TESTING-GUIDE.md)
-
-##  Testing
-
-\\\ash
-# Check database
-node test/check-all-tables.js
-
-# End-to-end test
-node test/test-end-to-end.js
-\\\
-
-##  Deployment
-
-See [docs/DEPLOY-VERCEL.md](docs/DEPLOY-VERCEL.md)
-
-##  Author
-
-**Nguyen Quang Huy**  
-GitHub: [@nguyenquanghuy12345678](https://github.com/nguyenquanghuy12345678)
-
-##  License
-
-MIT License
+Chi tiết: Xem [VERCEL-DEPLOY.md](VERCEL-DEPLOY.md)
 
 ---
 
-**Made with  by Nguyen Quang Huy**
+## 🚀 Cách sử dụng
+
+### 1. Cài đặt
+
+```bash
+npm install
+```
+
+### 2. Setup Database
+
+Chạy init script để tạo database:
+
+```bash
+node scripts/init-db.js
+```
+
+✅ Kết quả: 4 bảng được tạo với timezone UTC+7
+
+### 3. Chạy Server
+
+```bash
+node server.js
+```
+
+Server sẽ chạy tại: http://localhost:3000
+
+### 4. Sử dụng App
+
+1. **Đăng nhập**: Email: `demo@example.com` / Password: `demo123`
+2. **Camera tự khởi động**: Sau khi đăng nhập, camera sẽ tự động bật
+3. **Di chuyển vào khung hình**: App sẽ phát hiện khuôn mặt
+4. **Auto-start**: Sau 2 giây phát hiện → Tự động bắt đầu tracking
+5. **Tracking realtime**: Cảm xúc được lưu mỗi 10 giây vào Neon
+6. **Dừng camera**: Click nút Stop → Xác nhận → Dừng và đồng bộ
+
+## 📊 Database Schema
+
+### 4 bảng chính:
+
+1. **users** - Thông tin người dùng
+2. **work_sessions** - Phiên làm việc (auto-calculate duration)
+3. **emotion_history** - Lịch sử cảm xúc (saved every 10s)
+4. **work_notes** - Ghi chú công việc
+
+### Timestamp: 
+- Tất cả đều dùng `(NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh')`
+- Timezone: UTC+7 (Việt Nam)
+
+## 📁 Cấu trúc Project
+
+```
+emotion-detection-app/
+├── js/
+│   ├── app-realtime.js     ← Main app logic
+│   ├── api-client.js       ← API calls
+│   ├── auth-ui.js          ← Authentication UI
+│   ├── camera.js           ← Camera handler
+│   ├── emotions.js         ← Emotion display
+│   └── config.js           ← Config
+├── api/
+│   ├── auth/               ← Login/Register
+│   ├── sessions/           ← Start/End session
+│   └── emotions/           ← Save emotion
+├── scripts/
+│   └── init-db.js          ← Database setup
+├── database/
+│   └── schema-realtime.sql ← SQL schema
+├── index.html              ← Main page
+└── server.js               ← Express server
+```
+
+## 🔧 API Endpoints
+
+### Authentication
+- `POST /api/auth/login` - Đăng nhập
+- `POST /api/auth/register` - Đăng ký
+- `GET /api/auth/me` - User info
+
+### Sessions
+- `POST /api/sessions/start` - Bắt đầu phiên (auto-called)
+- `POST /api/sessions/end` - Kết thúc phiên
+
+### Emotions
+- `POST /api/emotions` - Lưu cảm xúc (every 10s)
+
+## 🎯 Flow hoạt động
+
+1. User login → Camera auto-start
+2. Face detected → 2s countdown
+3. Auto-start session → Begin tracking
+4. Detect emotion every 10s → Save to Neon
+5. User click Stop → Confirm dialog
+6. Confirmed → End session → Stop camera
+7. Data synced → Alert "Đã lưu vào Neon!"
+
+## 🗑️ Files đã xóa (không dùng)
+
+- ❌ Export PDF/CSV features
+- ❌ jsPDF, PapaParse libraries
+- ❌ productivity.css, export-service.js
+- ❌ app.js, app-fixed.js, app-main.js (replaced by app-realtime.js)
+- ❌ 4 tables: export_history, productivity_stats, alert_logs, absence_logs
+
+## ✅ Sẵn sàng sử dụng
+
+Tất cả đã được tối ưu và sạch sẽ. Chỉ giữ lại những gì cần thiết!
+
+**Demo User**: demo@example.com / demo123
+**Server**: http://localhost:3000
+**Database**: Neon PostgreSQL (UTC+7)
+
+🎉 **Enjoy your realtime emotion tracking!**
