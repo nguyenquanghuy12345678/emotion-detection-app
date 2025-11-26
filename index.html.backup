@@ -409,8 +409,16 @@
                     <br>• Đã đăng nhập vào hệ thống
                     <br>• Đã kết thúc phiên làm việc (camera đã dừng)
                 </p>
-                <div class="quick-actions" style="display: none;">
-                    <!-- Export buttons removed for realtime mode -->
+                <div class="quick-actions">
+                    <button id="exportPdfBtn" onclick="exportProductivityReport('pdf')" class="action-btn export-btn" disabled title="Vui lòng đăng nhập và kết thúc phiên làm việc">
+                        📄 Xuất PDF
+                    </button>
+                    <button id="exportCsvBtn" onclick="exportProductivityReport('csv')" class="action-btn export-btn" disabled title="Vui lòng đăng nhập và kết thúc phiên làm việc">
+                        📊 Xuất CSV
+                    </button>
+                    <button onclick="if(window.productivityTracker && confirm('Xóa tất cả dữ liệu?')) window.productivityTracker.resetData()" class="action-btn danger">
+                        🗑️ Xóa dữ liệu
+                    </button>
                 </div>
             </div>
         </div>
@@ -854,6 +862,18 @@
     <script src="js/emotions.js"></script>
 
     <script src="js/camera.js"></script>
+    
+    <!-- Productivity with duplicate prevention -->
+    <script>
+        if (typeof window.productivityTracker === 'undefined') {
+            window.productivityTrackerLoaded = false;
+        } else {
+            window.productivityTrackerLoaded = true;
+            console.warn('🛡️ ProductivityTracker already exists, skipping duplicate load');
+        }
+    </script>
+
+    
     <script src="js/ai-assistant.js"></script>
     
     <!-- Realtime Camera Tracking App -->
@@ -1038,7 +1058,9 @@
     
     <!-- Initialize Global Objects -->
     <script>
-        // Khởi tạo app sau khi tất cả scripts loaded
+        // Khởi tạo ProductivityTracker và AIAssistant sau khi tất cả scripts loaded
+        // Check if already declared to prevent duplicates
+        // Sử dụng window.aiAssistant, không khai báo lại
         
         // Chờ window load hoàn toàn
         window.addEventListener('load', () => {
@@ -1061,45 +1083,291 @@
                 console.error('❌ Error during initialization:', error);
             }
         });
+                                if (session && session.session) {
+                                    console.log('✅ Active session found:', session.session.id);
+                                    window.currentSessionId = session.session.id;
+                                } else {
+                                    console.log('📝 No active session, will start on camera');
+                                }
+                            })
+                            .catch(err => console.warn('⚠️ Session check failed:', err));
+                        
+                        // Start auto-sync
+                        window.apiClient.startAutoSync(5);
+                    } else {
+                        console.log('👤 User not authenticated, running in offline mode');
+                    }
+                    
+                    // Update status UI to show ready state
+                    const statusElement = document.getElementById('status');
+                    if (statusElement) {
+                        statusElement.innerHTML = `
+                            <div style="color: green; text-align: center; padding: 10px;">
+                                ✅ <strong>Hệ thống đã sẵn sàng!</strong><br>
+                                <small>Nhấn "Bắt Đầu" để bắt đầu nhận diện cảm xúc</small>
+                            </div>
+                        `;
+                    }
+                    
+                    // Khởi tạo EmotionDetectionApp
+                    console.log('🎭 Initializing EmotionDetectionApp...');
+                    
+                    // Check if Face-API is loaded
+                    if (typeof faceapi === 'undefined') {
+                        console.error('❌ Face-API not loaded yet! Cannot initialize EmotionDetectionApp');
+                        alert('⚠️ Face-API chưa tải xong. Vui lòng đợi và thử lại.');
+                        return;
+                    }
+                    
+                    if (typeof EmotionDetectionApp !== 'undefined') {
+                        try {
+                            console.log('🔧 Creating EmotionDetectionApp instance...');
+                            window.emotionApp = new EmotionDetectionApp();
+                            console.log('✅ EmotionDetectionApp initialized successfully!');
+                            console.log('📊 Models loaded:', window.emotionApp.modelsLoaded);
+                        } catch (appError) {
+                            console.error('❌ Error initializing EmotionDetectionApp:', appError);
+                            console.error('Error stack:', appError.stack);
+                        }
+                    } else {
+                        console.error('❌ EmotionDetectionApp class not found! Check js/app.js');
+                    }
+                    
+                    // Enable start button
+                    const startBtn = document.getElementById('startBtn');
+                    if (startBtn) {
+                        startBtn.disabled = false;
+                        startBtn.style.opacity = '1';
+                    }
+                    
+                } catch (error) {
+                    console.error('❌ CRITICAL ERROR initializing systems:', error);
+                    console.error('Error stack:', error.stack);
+                    alert('❌ Lỗi nghiêm trọng khi khởi tạo: ' + error.message + '\n\nXem Console (F12) để biết chi tiết.');
+                }
+            }
+            
+            // Bắt đầu khởi tạo systems sau 500ms
+            setTimeout(() => initializeSystems(), 500);
+        });
         
-        // Stub functions for removed features
+        // Update UI functions
         function updateProductivityUI() {
-            // Removed - using realtime mode
-        }
-        
-        function updateAnalytics() {
-            // Removed - using realtime mode
-        }
-        
-        function startPomodoro() {
-            alert('Tính năng Pomodoro đã được gỡ bỏ. Hệ thống chạy ở chế độ realtime tracking.');
-        }
-        
-        function pausePomodoro() {
-            alert('Tính năng Pomodoro đã được gỡ bỏ.');
-        }
-        
-        function resetPomodoro() {
-            alert('Tính năng Pomodoro đã được gỡ bỏ.');
-        }
-        
-        function exportProductivityReport() {
-            alert('Tính năng xuất báo cáo đã được gỡ bỏ. Dữ liệu được lưu realtime vào Neon database.');
-        }
-        
-        function updateExportButtons() {
-            // Removed - no export buttons
-        }
-        
-        function updateWorkNotes() {
-            // Removed - using realtime mode
+            if (!window.productivityTracker) return;
+            
+            // Update Pomodoro display
+            const pomodoroTimer = document.getElementById('pomodoroTimer');
+            if (pomodoroTimer) {
+                pomodoroTimer.innerHTML = `
+                    <div class="pomodoro-display">
+                        <div class="timer-circle">
+                            <div class="timer-time" id="timerDisplay">25:00</div>
+                            <div class="timer-label" id="timerLabel">Sẵn sàng</div>
+                        </div>
+                        <div class="timer-controls">
+                            <button onclick="startPomodoro()" class="btn-pomodoro btn-start">
+                                ▶️ Bắt đầu
+                            </button>
+                            <button onclick="pausePomodoro()" class="btn-pomodoro btn-pause" disabled>
+                                ⏸️ Tạm dừng
+                            </button>
+                            <button onclick="resetPomodoro()" class="btn-pomodoro btn-reset">
+                                🔄 Đặt lại
+                            </button>
+                        </div>
+                        <div class="pomodoro-stats">
+                            <div class="stat">
+                                <span class="stat-value" id="pomodoroCount">0</span>
+                                <span class="stat-label">Phiên hoàn thành</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Update work notes
+            updateWorkNotes();
+            
+            // Update productivity stats
+            const statsDiv = document.getElementById('productivityStats');
+            if (statsDiv && window.productivityTracker) {
+                const stats = window.productivityTracker.getCurrentStats();
+                statsDiv.innerHTML = `
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon">⏰</div>
+                            <div class="stat-content">
+                                <div class="stat-value">${formatTime(stats.totalWorkTime)}</div>
+                                <div class="stat-label">Tổng thời gian làm việc</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">😊</div>
+                            <div class="stat-content">
+                                <div class="stat-value">${formatTime(stats.focusedTime)}</div>
+                                <div class="stat-label">Thời gian tập trung</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">😔</div>
+                            <div class="stat-content">
+                                <div class="stat-value">${formatTime(stats.distractedTime)}</div>
+                                <div class="stat-label">Thời gian mất tập trung</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">🎯</div>
+                            <div class="stat-content">
+                                <div class="stat-value">${Math.round(window.productivityTracker.focusScore)}</div>
+                                <div class="stat-label">Điểm tập trung</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
         }
         
         function formatTime(seconds) {
             const hrs = Math.floor(seconds / 3600);
             const mins = Math.floor((seconds % 3600) / 60);
             const secs = seconds % 60;
-            return `${hrs}h ${mins}m ${secs}s`;
+            
+            if (hrs > 0) {
+                return `${hrs}g ${mins}p`;
+            } else if (mins > 0) {
+                return `${mins}p ${secs}s`;
+            } else {
+                return `${secs}s`;
+            }
+        }
+        
+        // Pomodoro functions with error handling
+        function startPomodoro() {
+            console.log('🍅 startPomodoro() called');
+            if (!window.productivityTracker) {
+                console.error('❌ ProductivityTracker not initialized!');
+                alert('❌ Lỗi: Hệ thống chưa sẵn sàng. Hãy reload trang.');
+                return;
+            }
+            
+            try {
+                window.productivityTracker.startPomodoro();
+                updatePomodoroButtons(true, false, false);
+                console.log('✅ Pomodoro started');
+            } catch (error) {
+                console.error('❌ Error starting Pomodoro:', error);
+                alert('❌ Lỗi khi bắt đầu Pomodoro: ' + error.message);
+            }
+        }
+        
+        function pausePomodoro() {
+            console.log('⏸️ pausePomodoro() called');
+            if (!window.productivityTracker) {
+                console.error('❌ ProductivityTracker not initialized!');
+                return;
+            }
+            
+            try {
+                window.productivityTracker.pausePomodoro();
+                updatePomodoroButtons(false, true, false);
+                console.log('✅ Pomodoro paused');
+            } catch (error) {
+                console.error('❌ Error pausing Pomodoro:', error);
+                alert('❌ Lỗi khi tạm dừng Pomodoro: ' + error.message);
+            }
+        }
+        
+        function resetPomodoro() {
+            console.log('🔄 resetPomodoro() called');
+            if (!window.productivityTracker) {
+                console.error('❌ ProductivityTracker not initialized!');
+                return;
+            }
+            
+            try {
+                window.productivityTracker.resetPomodoro();
+                updatePomodoroButtons(false, false, false);
+                console.log('✅ Pomodoro reset');
+            } catch (error) {
+                console.error('❌ Error resetting Pomodoro:', error);
+                alert('❌ Lỗi khi reset Pomodoro: ' + error.message);
+            }
+        }
+        
+        function updatePomodoroButtons(startDisabled, pauseDisabled, resetDisabled) {
+            const startBtn = document.querySelector('.btn-start');
+            const pauseBtn = document.querySelector('.btn-pause');
+            const resetBtn = document.querySelector('.btn-reset');
+            
+            if (startBtn) startBtn.disabled = startDisabled;
+            if (pauseBtn) pauseBtn.disabled = pauseDisabled;
+            if (resetBtn) resetBtn.disabled = resetDisabled;
+        }
+        
+        // Work notes functions with error handling
+        function addNote() {
+            console.log('📝 addNote() called');
+            const input = document.getElementById('noteInput');
+            
+            if (!input) {
+                console.error('❌ Note input element not found!');
+                return;
+            }
+            
+            const note = input.value.trim();
+            
+            if (!note) {
+                alert('⚠️ Vui lòng nhập nội dung ghi chú!');
+                return;
+            }
+            
+            if (!window.productivityTracker) {
+                console.error('❌ ProductivityTracker not initialized!');
+                alert('❌ Lỗi: Hệ thống chưa sẵn sàng. Hãy reload trang.');
+                return;
+            }
+            
+            try {
+                window.productivityTracker.addWorkNote(note);
+                input.value = '';
+                updateWorkNotes();
+                console.log('✅ Note added:', note);
+            } catch (error) {
+                console.error('❌ Error adding note:', error);
+                alert('❌ Lỗi khi thêm ghi chú: ' + error.message);
+            }
+        }
+        
+        function updateWorkNotes() {
+            if (!window.productivityTracker) return;
+            
+            const container = document.getElementById('workNotes');
+            const notes = window.productivityTracker.workNotes || [];
+            
+            if (notes.length === 0) {
+                container.innerHTML = '<p class="no-notes">Chưa có ghi chú nào. Thêm ghi chú đầu tiên!</p>';
+                return;
+            }
+            
+            const notesHTML = notes.map((note, index) => `
+                <div class="note-item">
+                    <div class="note-content">
+                        <div class="note-text">${note.note_text || note.text || note.note || 'Ghi chú'}</div>
+                        <div class="note-time">${new Date(note.created_at || note.timestamp).toLocaleString('vi-VN')}</div>
+                    </div>
+                    <button onclick="deleteNote(${index})" class="note-delete">🗑️</button>
+                </div>
+            `).join('');
+            
+            container.innerHTML = notesHTML;
+        }
+        
+        function deleteNote(index) {
+            if (window.productivityTracker) {
+                window.productivityTracker.workNotes.splice(index, 1);
+                window.productivityTracker.saveData();
+                updateWorkNotes();
+            }
         }
     </script>
     
@@ -1295,12 +1563,75 @@
             historyContainer.innerHTML = historyHTML;
         }
         
+        // addNote() function is defined above in "Initialize Global Objects" script
+        // Removed duplicate to avoid "already declared" error
+        
+        function updateAnalytics() {
+            if (!window.productivityTracker) return;
+            
+            // Update stats
+            window.productivityTracker.updateStatsDisplay();
+            
+            // Update emotion chart
+            const chartData = window.productivityTracker.generateEmotionChart();
+            const chartContainer = document.getElementById('emotionChart');
+            
+            if (chartData.length > 0) {
+                const chartHTML = chartData.map(item => `
+                    <div class="chart-bar">
+                        <div class="chart-label">${window.productivityTracker.getEmotionEmoji(item.emotion)} ${item.emotion}</div>
+                        <div class="chart-bar-bg">
+                            <div class="chart-bar-fill" style="width: ${item.percentage}%"></div>
+                        </div>
+                        <div class="chart-value">${item.percentage}%</div>
+                    </div>
+                `).join('');
+                
+                chartContainer.innerHTML = chartHTML;
+            }
+            
+            // Update timeline
+            updateEmotionTimeline();
+        }
+        
+        function updateEmotionTimeline() {
+            if (!window.productivityTracker) return;
+            
+            const timeline = document.getElementById('emotionTimeline');
+            const history = window.productivityTracker.emotionHistory.slice(-10).reverse();
+            
+            if (history.length === 0) {
+                timeline.innerHTML = '<p class="hint">Chưa có dữ liệu lịch sử</p>';
+                return;
+            }
+            
+            const timelineHTML = history.map(item => {
+                const date = new Date(item.timestamp);
+                const emoji = window.productivityTracker.getEmotionEmoji(item.emotion);
+                
+                return `
+                    <div class="timeline-item">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content">
+                            <span class="timeline-emoji">${emoji}</span>
+                            <span class="timeline-emotion">${item.emotion}</span>
+                            <span class="timeline-score">Tập trung: ${item.focusScore}/100</span>
+                            <span class="timeline-time">${date.toLocaleTimeString('vi-VN')}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            timeline.innerHTML = timelineHTML;
+        }
+        
         // Diagnostic function for troubleshooting
         function openDiagnostic() {
             alert('🔍 Chẩn đoán hệ thống:\n\n' +
-                  '📹 Face-API: ' + (typeof faceapi !== 'undefined' ? '✅ OK' : '❌ Lỗi') + '\n' +
+                  '� Face-API: ' + (typeof faceapi !== 'undefined' ? '✅ OK' : '❌ Lỗi') + '\n' +
+                  '🤖 ProductivityTracker: ' + (typeof window.productivityTracker !== 'undefined' ? '✅ OK' : '❌ Lỗi') + '\n' +
                   '🧠 AIAssistant: ' + (typeof window.aiAssistant !== 'undefined' ? '✅ OK' : '❌ Lỗi') + '\n' +
-                  '🌐 Mạng: ' + (navigator.onLine ? '✅ Online' : '❌ Offline') + '\n\n' +
+                  '� Mạng: ' + (navigator.onLine ? '✅ Online' : '❌ Offline') + '\n\n' +
                   'Kiểm tra Console (F12) để xem chi tiết!');
         }
         
